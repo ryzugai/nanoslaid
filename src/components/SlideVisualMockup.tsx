@@ -2,51 +2,24 @@ import React from 'react';
 import { SlideData, SetupConfig, InfographicArchetype } from '../types';
 import { OFFICIAL_COLOR_SCHEMES } from '../data/colorSchemes';
 import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
+import { PresenterAvatarView } from './PresenterAvatarView';
 import {
-  User,
   Sparkles,
   CheckCircle2,
   ArrowRight,
   Shield,
   Zap,
   Cpu,
-  Users,
   TrendingUp,
-  Gauge,
   HelpCircle,
-  Check,
-  X,
-  Radio,
-  Globe,
   Layers,
-  Smartphone,
-  Scale,
-  Brain,
-  Bookmark,
-  MessageSquare,
+  Award,
+  BarChart3,
   Calendar,
   Share2,
   ShieldCheck,
-  BarChart3,
-  Presentation,
-  AlertTriangle,
   RotateCw,
-  DollarSign,
-  Award,
-  Grid,
-  Search,
-  CheckSquare,
-  FileCheck,
-  Maximize2,
-  Leaf,
-  Flame,
-  Clock,
-  FileText,
-  AlertCircle,
-  Eye,
-  BookOpen,
-  Target,
-  Trophy
+  Scale
 } from 'lucide-react';
 
 interface SlideVisualMockupProps {
@@ -63,7 +36,6 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
   const secondaryAccent = scheme.accentHexes[1] || '#3B82F6';
   const isDark = scheme.mode === 'Dark Mode' || slide.colorSchemeHex?.startsWith('#0') || slide.colorSchemeHex?.startsWith('#1');
   const isLeft = slide.characterPosition === 'KIRI';
-  const charName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
 
   const archetype: InfographicArchetype =
     slide.infographicType ||
@@ -74,7 +46,7 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
 
   return (
     <div
-      className={`w-full aspect-[16/9] rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl flex flex-col justify-between select-none transition-all border ${
+      className={`w-full aspect-[16/9] rounded-2xl p-4 sm:p-5 relative overflow-hidden shadow-2xl flex flex-col justify-between select-none transition-all border ${
         isDark
           ? 'bg-[#0B0F19] text-slate-100 border-slate-800'
           : 'bg-[#F8FAFC] text-slate-900 border-slate-200'
@@ -85,8 +57,8 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
         className="absolute inset-0 pointer-events-none opacity-60"
         style={{
           background: isDark
-            ? `radial-gradient(circle at ${isLeft ? '75%' : '25%'} 40%, ${primaryAccent}22 0%, ${secondaryAccent}10 60%, transparent 85%)`
-            : `radial-gradient(circle at ${isLeft ? '75%' : '25%'} 40%, #FFFFFF 0%, #F1F5F9 60%, #E2E8F0 100%)`,
+            ? `radial-gradient(circle at ${isLeft ? '20%' : '80%'} 40%, ${primaryAccent}25 0%, ${secondaryAccent}10 60%, transparent 85%)`
+            : `radial-gradient(circle at ${isLeft ? '20%' : '80%'} 40%, #FFFFFF 0%, #F1F5F9 60%, #E2E8F0 100%)`,
         }}
       />
 
@@ -107,29 +79,36 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
         />
       </svg>
 
-      {/* Main Slide Layout Grid */}
+      {/* Main Slide Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col justify-between">
         
         {/* Top Header Section */}
         <div className="w-full space-y-1">
-          {/* Category Pill */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white/10 backdrop-blur-xs border border-white/20">
-            {slide.isMcq ? (
-              <>
-                <HelpCircle className="w-3 h-3 text-amber-400" />
-                <span>Soalan Uji Minda • Slaid {slide.slideNumber}</span>
-              </>
-            ) : (
-              <>
-                <Layers className="w-3 h-3 text-cyan-400" />
-                <span>Modul {slide.slideNumber} • {archetype.replace('_', ' ')}</span>
-              </>
-            )}
+          <div className="flex items-center justify-between">
+            {/* Category Pill */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white/10 backdrop-blur-xs border border-white/20">
+              {slide.isMcq ? (
+                <>
+                  <HelpCircle className="w-3 h-3 text-amber-400" />
+                  <span>Soalan Uji Minda • Slaid {slide.slideNumber}</span>
+                </>
+              ) : (
+                <>
+                  <Layers className="w-3 h-3 text-cyan-400" />
+                  <span>Slaid {slide.slideNumber} • {archetype.replace('_', ' ')}</span>
+                </>
+              )}
+            </div>
+
+            {/* Teaching Gesture Badge */}
+            <div className="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">
+              Posisi: {slide.characterPosition} • {teachingPose.title}
+            </div>
           </div>
 
           {/* Big Bold Gradient Title */}
           <h2
-            className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight line-clamp-2"
+            className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-tight line-clamp-2"
             style={{
               backgroundImage: isDark
                 ? `linear-gradient(135deg, #FFFFFF, ${primaryAccent})`
@@ -142,43 +121,49 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
           </h2>
         </div>
 
-        {/* Central Workspace Area: Dynamic Infographics */}
-        <div className="relative flex-1 flex flex-col justify-center my-2 sm:my-3 w-full">
-          {/* Dynamic Content: Diverse Infographics vs MCQ Interface */}
-          <div className="w-full">
+        {/* Central Workspace Area: 2-Column Split (Avatar Presenter + Infographics / Quiz) */}
+        <div className="relative flex-1 flex items-stretch gap-4 my-2 w-full overflow-hidden">
+          
+          {/* Avatar Column (When Positioned on Left) */}
+          {isLeft && (
+            <div className="w-[26%] sm:w-[24%] shrink-0 flex flex-col justify-end items-center h-full">
+              <PresenterAvatarView slide={slide} config={config} isLeft={true} />
+            </div>
+          )}
+
+          {/* Main Diagram / Infographic / Quiz Content (Takes 74-76% width) */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
             {slide.isMcq && slide.mcqDetails ? (
               /* MCQ Quiz Interface */
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div
-                  className={`p-4 sm:p-5 rounded-2xl border shadow-xl ${
+                  className={`p-3 sm:p-4 rounded-xl border shadow-lg ${
                     isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white border-slate-200'
                   }`}
-                  style={{ borderLeft: `6px solid ${primaryAccent}` }}
+                  style={{ borderLeft: `5px solid ${primaryAccent}` }}
                 >
-                  <p className="text-lg sm:text-xl md:text-2xl font-black leading-snug">
+                  <p className="text-sm sm:text-base md:text-lg font-black leading-snug">
                     {slide.mcqDetails.question}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {slide.mcqDetails.options.map((opt) => (
                     <div
                       key={opt.label}
-                      className={`p-3.5 sm:p-4 rounded-xl border flex items-center gap-3 shadow-md ${
-                        isDark
-                          ? 'bg-slate-900/80 border-slate-800'
-                          : 'bg-white border-slate-200'
+                      className={`p-2.5 sm:p-3 rounded-lg border flex items-center gap-2.5 shadow-xs ${
+                        isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
                       }`}
                     >
                       <span
-                        className="w-8 sm:w-9 h-8 sm:h-9 rounded-lg flex items-center justify-center font-mono font-black text-base sm:text-lg shrink-0 text-white shadow-sm"
+                        className="w-6 sm:w-7 h-6 sm:h-7 rounded-md flex items-center justify-center font-mono font-black text-xs sm:text-sm shrink-0 text-white shadow-xs"
                         style={{
                           backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
                         }}
                       >
                         {opt.label}
                       </span>
-                      <span className="text-base sm:text-lg md:text-[20px] font-bold leading-relaxed">
+                      <span className="text-xs sm:text-sm font-bold leading-tight">
                         {opt.text}
                       </span>
                     </div>
@@ -186,34 +171,32 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                 </div>
               </div>
             ) : archetype === 'PROCESS_FLOW' && slide.infographicMeta?.steps ? (
-              /* 1. PROCESS FLOW: Horizontal Step-by-Step Flowchart */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              /* 1. PROCESS FLOW: Step-by-Step Flow */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 {slide.infographicMeta.steps.map((step, idx) => (
                   <div
                     key={step.step}
-                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg relative ${
+                    className={`p-2.5 sm:p-3 rounded-xl border flex flex-col justify-between shadow-md ${
                       isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                    style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span
-                          className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white shadow-xs"
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-mono text-[10px] font-black uppercase text-cyan-400">
+                          Langkah {step.step}
+                        </span>
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] text-white shadow-xs"
                           style={{
-                            backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
+                            backgroundColor: idx % 2 === 0 ? primaryAccent : secondaryAccent,
                           }}
                         >
-                          0{step.step}
-                        </span>
-                        {idx < 3 && (
-                          <ArrowRight className="w-5 h-5 opacity-40 hidden sm:block" />
-                        )}
+                          {step.step}
+                        </div>
                       </div>
-                      <h4 className="text-lg font-black leading-tight mb-2">
-                        {step.title}
-                      </h4>
-                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
+                      <h4 className="text-xs sm:text-sm font-black mb-1 line-clamp-1">{step.title}</h4>
+                      <p className="text-[11px] sm:text-xs font-medium opacity-85 leading-relaxed line-clamp-3">
                         {step.desc}
                       </p>
                     </div>
@@ -221,57 +204,56 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                 ))}
               </div>
             ) : archetype === 'STAT_METRIC_GAUGE' && slide.infographicMeta?.stats ? (
-              /* 2. STAT METRIC GAUGE: Executive KPI Telemetry */
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {slide.infographicMeta.stats.map((stat, idx) => (
+              /* 2. STAT METRICS: Quantitative Cards */
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {slide.infographicMeta.stats.map((st, idx) => (
                   <div
                     key={idx}
-                    className={`p-4 sm:p-5 rounded-xl border flex flex-col items-center text-center justify-center shadow-lg ${
-                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-3 sm:p-4 rounded-xl border text-center flex flex-col justify-between shadow-md ${
+                      isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderBottom: `5px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : '#10B981'}` }}
+                    style={{ borderBottom: `4px solid ${idx === 0 ? primaryAccent : secondaryAccent}` }}
                   >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 bg-cyan-500/10 text-cyan-400">
-                      {idx === 0 ? <Gauge className="w-6 h-6" /> : idx === 1 ? <TrendingUp className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
+                    <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase opacity-75 mb-1">
+                      <BarChart3 className="w-3.5 h-3.5" style={{ color: primaryAccent }} />
+                      <span className="truncate">{st.label}</span>
                     </div>
                     <div
-                      className="text-3xl sm:text-4xl font-black font-mono tracking-tight"
+                      className="text-xl sm:text-2xl md:text-3xl font-black font-mono my-1 tracking-tight"
                       style={{
                         backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                       }}
                     >
-                      {stat.value}
+                      {st.value}
                     </div>
-                    <div className="text-lg sm:text-xl font-black mt-1.5">{stat.label}</div>
-                    {stat.change && (
-                      <span className="text-base font-bold text-emerald-400 mt-1">
-                        {stat.change}
-                      </span>
+                    {st.change && (
+                      <div className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-block mx-auto bg-emerald-500/20 text-emerald-400">
+                        {st.change}
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
             ) : archetype === 'MULTI_PILLAR' && slide.infographicMeta?.pillars ? (
-              /* 3. MULTI PILLAR: Architectural Pillars */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              /* 3. MULTI PILLAR: Core Strategic Pillars */
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {slide.infographicMeta.pillars.map((pillar, idx) => (
                   <div
                     key={idx}
-                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg ${
+                    className={`p-3 rounded-xl border flex flex-col justify-between shadow-md ${
                       isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                    style={{ borderTop: `4px solid ${idx === 1 ? secondaryAccent : primaryAccent}` }}
                   >
                     <div>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5 bg-blue-500/10 text-blue-400">
-                        {idx === 0 ? <Shield className="w-5 h-5" /> : idx === 1 ? <Cpu className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Shield className="w-3.5 h-3.5" style={{ color: primaryAccent }} />
+                        <span className="text-[10px] font-mono font-bold uppercase opacity-80">Tiang {idx + 1}</span>
                       </div>
-                      <h4 className="text-lg font-black leading-tight mb-2">
-                        {pillar.title}
-                      </h4>
-                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
+                      <h4 className="text-xs sm:text-sm font-black mb-1 line-clamp-1">{pillar.title}</h4>
+                      <p className="text-[11px] sm:text-xs font-medium opacity-85 leading-relaxed line-clamp-3">
                         {pillar.desc}
                       </p>
                     </div>
@@ -279,377 +261,200 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                 ))}
               </div>
             ) : archetype === 'COMPARISON_MATRIX' && slide.infographicMeta?.comparison ? (
-              /* 4. COMPARISON MATRIX: Dual-Column Contrast */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Left: Traditional */}
+              /* 4. COMPARISON MATRIX */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div
-                  className={`p-4 sm:p-5 rounded-2xl border shadow-md ${
-                    isDark ? 'bg-rose-950/25 border-rose-900/50' : 'bg-rose-50 border-rose-200'
+                  className={`p-3 rounded-xl border ${
+                    isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
                   }`}
+                  style={{ borderLeft: `4px solid ${primaryAccent}` }}
                 >
-                  <div className="flex items-center gap-2 mb-3 text-rose-500 font-black text-lg">
-                    <X className="w-5 h-5" />
+                  <h4 className="text-xs sm:text-sm font-black mb-2 flex items-center gap-1.5 text-cyan-400">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>{slide.infographicMeta.comparison.leftTitle}</span>
-                  </div>
-                  <ul className="space-y-2.5">
-                    {slide.infographicMeta.comparison.leftItems.map((item, i) => (
-                      <li key={i} className="text-base sm:text-lg md:text-[20px] flex items-start gap-2.5 opacity-90 leading-relaxed font-medium">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shrink-0 mt-2" />
-                        <span>{item}</span>
+                  </h4>
+                  <ul className="space-y-1.5 text-[11px] sm:text-xs">
+                    {slide.infographicMeta.comparison.leftItems.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-cyan-400 font-bold">•</span>
+                        <span className="leading-tight">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Right: Smart Modern */}
                 <div
-                  className={`p-4 sm:p-5 rounded-2xl border shadow-md ${
-                    isDark ? 'bg-cyan-950/25 border-cyan-800/50' : 'bg-cyan-50 border-cyan-200'
+                  className={`p-3 rounded-xl border ${
+                    isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
                   }`}
+                  style={{ borderLeft: `4px solid ${secondaryAccent}` }}
                 >
-                  <div className="flex items-center gap-2 mb-3 text-cyan-500 font-black text-lg">
-                    <Check className="w-5 h-5" />
+                  <h4 className="text-xs sm:text-sm font-black mb-2 flex items-center gap-1.5 text-blue-400">
+                    <Scale className="w-3.5 h-3.5" />
                     <span>{slide.infographicMeta.comparison.rightTitle}</span>
-                  </div>
-                  <ul className="space-y-2.5">
-                    {slide.infographicMeta.comparison.rightItems.map((item, i) => (
-                      <li key={i} className="text-base sm:text-lg md:text-[20px] flex items-start gap-2.5 font-bold leading-relaxed">
-                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shrink-0 mt-2" />
-                        <span>{item}</span>
+                  </h4>
+                  <ul className="space-y-1.5 text-[11px] sm:text-xs">
+                    {slide.infographicMeta.comparison.rightItems.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-blue-400 font-bold">•</span>
+                        <span className="leading-tight">{item}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
-              </div>
-            ) : archetype === 'RADIAL_ECOSYSTEM' && slide.infographicMeta?.nodes ? (
-              /* 5. RADIAL ECOSYSTEM: Core Hub & Satellite Nodes */
-              <div className="space-y-3">
-                <div
-                  className={`p-3.5 sm:p-4 rounded-xl border text-center shadow-lg ${
-                    isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white border-slate-200'
-                  }`}
-                  style={{ borderLeft: `6px solid ${primaryAccent}` }}
-                >
-                  <span className="text-xs uppercase font-bold text-cyan-400">Hab Pusat</span>
-                  <h4 className="text-lg sm:text-xl font-black">{slide.infographicMeta.nodes.centerNode}</h4>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {slide.infographicMeta.nodes.satellites.map((sat, i) => (
-                    <div
-                      key={i}
-                      className={`p-3.5 rounded-xl border shadow-sm ${
-                        isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white/95 border-slate-200'
-                      }`}
-                    >
-                      <div className="text-base sm:text-lg font-black text-cyan-300 truncate">{sat.title}</div>
-                      <div className="text-base sm:text-lg md:text-[20px] opacity-90 leading-relaxed mt-1 font-medium">{sat.desc}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             ) : archetype === 'TIMELINE_ROADMAP' && slide.infographicMeta?.phases ? (
-              /* 6. TIMELINE ROADMAP: Phase Milestones */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              /* 6. TIMELINE ROADMAP */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 {slide.infographicMeta.phases.map((ph, idx) => (
                   <div
                     key={idx}
-                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg ${
-                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
-                  >
-                    <div>
-                      <span className="text-xs font-black font-mono px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-300">
-                        {ph.phase}
-                      </span>
-                      <h4 className="text-lg font-black mt-2.5 mb-1">{ph.milestone}</h4>
-                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">{ph.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : archetype === 'QUADRANT_MATRIX' && slide.infographicMeta?.quadrants ? (
-              /* 7. QUADRANT MATRIX: 2x2 Strategic Decision Matrix */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { q: slide.infographicMeta.quadrants.q1, color: '#3B82F6', num: '01' },
-                  { q: slide.infographicMeta.quadrants.q2, color: '#10B981', num: '02' },
-                  { q: slide.infographicMeta.quadrants.q3, color: '#F59E0B', num: '03' },
-                  { q: slide.infographicMeta.quadrants.q4, color: '#8B5CF6', num: '04' }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3.5 sm:p-4 rounded-xl border shadow-md flex flex-col justify-between ${
-                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                    style={{ borderTop: `4px solid ${item.color}` }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span
-                          className="px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider text-white"
-                          style={{ backgroundColor: item.color }}
-                        >
-                          {item.q.badge}
-                        </span>
-                        <span className="font-mono font-bold text-xs opacity-50">Kuadran {item.num}</span>
-                      </div>
-                      <h4 className="text-base sm:text-lg font-black leading-tight mb-1.5">{item.q.title}</h4>
-                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{item.q.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : archetype === 'PYRAMID_HIERARCHY' && slide.infographicMeta?.pyramid ? (
-              /* 8. PYRAMID HIERARCHY: 3-Tier Layered Strategic Structure */
-              <div className="space-y-2.5 flex flex-col items-center">
-                {[
-                  { tier: slide.infographicMeta.pyramid.top, widthClass: 'w-full sm:w-3/4', color: primaryAccent },
-                  { tier: slide.infographicMeta.pyramid.middle, widthClass: 'w-full sm:w-11/12', color: secondaryAccent },
-                  { tier: slide.infographicMeta.pyramid.base, widthClass: 'w-full', color: '#10B981' }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`${item.widthClass} p-3 sm:p-4 rounded-xl border shadow-md flex items-center gap-3.5 transition-all ${
-                      isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                    style={{ borderLeft: `6px solid ${item.color}` }}
-                  >
-                    <div
-                      className="w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-black text-xs sm:text-sm text-white shrink-0 shadow-sm"
-                      style={{ backgroundColor: item.color }}
-                    >
-                      L{idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider opacity-70">{item.tier.level}</span>
-                      </div>
-                      <h4 className="text-base sm:text-lg font-black leading-tight">{item.tier.title}</h4>
-                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed mt-0.5">{item.tier.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : archetype === 'CIRCULAR_CYCLE' && slide.infographicMeta?.cycle ? (
-              /* 9. CIRCULAR CYCLE: 4-Stage Continuous PDCA Loop */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {slide.infographicMeta.cycle.stages.map((stg, idx) => (
-                  <div
-                    key={stg.stage}
-                    className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between shadow-md relative ${
-                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-2.5 rounded-xl border flex flex-col justify-between shadow-xs ${
+                      isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
                     }`}
                     style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs text-white shadow-xs"
-                          style={{
-                            backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
-                          }}
-                        >
-                          0{stg.stage}
-                        </span>
-                        <RotateCw className="w-4 h-4 opacity-40" />
-                      </div>
-                      <h4 className="text-base sm:text-lg font-black leading-tight mb-1.5">{stg.title}</h4>
-                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{stg.desc}</p>
+                      <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 mb-0.5 block">
+                        {ph.phase}
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-black mb-1 line-clamp-1">{ph.milestone}</h4>
+                      <p className="text-[11px] font-medium opacity-85 leading-relaxed line-clamp-3">
+                        {ph.desc}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : archetype === 'CASE_STUDY_SHOWCASE' && slide.infographicMeta?.caseStudy ? (
-              /* 10. CASE STUDY SHOWCASE: 3-Panel Problem -> Solution -> Impact */
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* 1. Cabaran */}
-                <div
-                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
-                    isDark ? 'bg-rose-950/25 border-rose-900/50' : 'bg-rose-50 border-rose-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 text-rose-500 font-bold text-xs uppercase mb-1.5">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>Cabaran Utama</span>
-                  </div>
-                  <h4 className="text-base sm:text-lg font-black text-rose-400 mb-1">{slide.infographicMeta.caseStudy.challenge}</h4>
-                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.challengeDesc}</p>
-                </div>
-
-                {/* 2. Solusi */}
-                <div
-                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
-                    isDark ? 'bg-blue-950/25 border-blue-900/50' : 'bg-blue-50 border-blue-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 text-blue-400 font-bold text-xs uppercase mb-1.5">
-                    <Zap className="w-4 h-4" />
-                    <span>Solusi Dilaksana</span>
-                  </div>
-                  <h4 className="text-base sm:text-lg font-black text-blue-300 mb-1">{slide.infographicMeta.caseStudy.solution}</h4>
-                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.solutionDesc}</p>
-                </div>
-
-                {/* 3. Hasil & Metrik */}
-                <div
-                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
-                    isDark ? 'bg-emerald-950/25 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs uppercase mb-1.5">
-                    <Award className="w-4 h-4" />
-                    <span>Hasil Impak Terbukti</span>
-                  </div>
-                  <div className="font-mono font-black text-xl sm:text-2xl text-emerald-400 mb-1">
-                    {slide.infographicMeta.caseStudy.impactMetric}
-                  </div>
-                  <h4 className="text-base sm:text-lg font-black text-emerald-300 mb-1">{slide.infographicMeta.caseStudy.result}</h4>
-                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.resultDesc}</p>
-                </div>
-              </div>
             ) : archetype === 'BENTO_GRID' && slide.infographicMeta?.bento ? (
-              /* 11. BENTO GRID: Spotlight Master Card + 2 Stat Modules + Key Takeaway */
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Large Spotlight Card (2 cols) */}
+              /* 11. BENTO GRID */
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div
-                    className={`sm:col-span-2 p-4 rounded-xl border shadow-md ${
+                    className={`sm:col-span-2 p-3 rounded-xl border shadow-sm ${
                       isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderLeft: `6px solid ${primaryAccent}` }}
+                    style={{ borderLeft: `5px solid ${primaryAccent}` }}
                   >
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1.5">
-                      <Sparkles className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-cyan-400 mb-1">
+                      <Sparkles className="w-3 h-3" />
                       <span>Sorotan Strategik</span>
                     </div>
-                    <h4 className="text-lg sm:text-xl font-black mb-2">{slide.infographicMeta.bento.spotlightTitle}</h4>
-                    <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
+                    <h4 className="text-xs sm:text-sm font-black mb-1">{slide.infographicMeta.bento.spotlightTitle}</h4>
+                    <p className="text-xs font-medium opacity-90 leading-relaxed line-clamp-2">
                       {slide.infographicMeta.bento.spotlightDesc}
                     </p>
                   </div>
 
-                  {/* Dual Stacked Metrics (1 col) */}
-                  <div className="space-y-3 flex flex-col justify-between">
+                  <div className="space-y-1.5 flex flex-col justify-between">
                     <div
-                      className={`p-3 rounded-xl border shadow-sm flex items-center justify-between ${
+                      className={`p-2 rounded-lg border flex items-center justify-between ${
                         isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
                       }`}
                     >
-                      <div>
-                        <div className="text-xs font-bold opacity-70">{slide.infographicMeta.bento.metric1.label}</div>
-                        <div className="text-xl sm:text-2xl font-black font-mono text-cyan-400">
-                          {slide.infographicMeta.bento.metric1.value}
-                        </div>
+                      <div className="text-[10px] font-bold opacity-70 truncate">{slide.infographicMeta.bento.metric1.label}</div>
+                      <div className="text-sm font-black font-mono text-cyan-400">
+                        {slide.infographicMeta.bento.metric1.value}
                       </div>
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">
-                        {slide.infographicMeta.bento.metric1.badge}
-                      </span>
                     </div>
 
                     <div
-                      className={`p-3 rounded-xl border shadow-sm flex items-center justify-between ${
+                      className={`p-2 rounded-lg border flex items-center justify-between ${
                         isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
                       }`}
                     >
-                      <div>
-                        <div className="text-xs font-bold opacity-70">{slide.infographicMeta.bento.metric2.label}</div>
-                        <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400">
-                          {slide.infographicMeta.bento.metric2.value}
-                        </div>
+                      <div className="text-[10px] font-bold opacity-70 truncate">{slide.infographicMeta.bento.metric2.label}</div>
+                      <div className="text-sm font-black font-mono text-emerald-400">
+                        {slide.infographicMeta.bento.metric2.value}
                       </div>
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                        {slide.infographicMeta.bento.metric2.badge}
-                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Bottom Takeaway Banner */}
                 <div
-                  className={`p-3 rounded-xl border flex items-center gap-3 ${
+                  className={`p-2 rounded-lg border flex items-center gap-2 ${
                     isDark ? 'bg-cyan-950/30 border-cyan-800/40' : 'bg-cyan-50 border-cyan-200'
                   }`}
                 >
-                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-                  <p className="text-sm sm:text-base font-bold text-cyan-300 leading-snug">
-                    <span className="font-black text-cyan-200">Kunci Utama: </span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <p className="text-xs font-bold text-cyan-300 leading-snug truncate">
+                    <span className="font-black text-cyan-200">Kunci: </span>
                     {slide.infographicMeta.bento.takeaway}
                   </p>
                 </div>
               </div>
             ) : (
-              /* Fallback Bento Cards */
-              <div className="space-y-3">
+              /* Fallback Key Points */
+              <div className="space-y-2">
                 {(slide.infographicPoints && slide.infographicPoints.length > 0
                   ? slide.infographicPoints
                   : [
-                      'Analisis terperinci dan penjajaran strategi pelaksanaan projek.',
-                      'Pemerkasaan tadbir urus digital dengan keselamatan data menyeluruh.',
-                      'Peningkatan kecekapan operasi melalui automasi mampan berimpak tinggi.',
+                      'Analisis terperinci dan penjajaran kandungan modul.',
+                      'Penerangan langkah pelaksanaan dan aplikasi praktikal.',
+                      'Pemantauan kualiti dan jaminan keberhasilan.',
                     ]
                 )
-                  .slice(0, 4)
+                  .slice(0, 3)
                   .map((point, idx) => (
                     <div
                       key={idx}
-                      className={`p-3.5 sm:p-4 rounded-xl border shadow-md flex items-center gap-3.5 ${
+                      className={`p-2.5 sm:p-3 rounded-xl border shadow-xs flex items-center gap-3 ${
                         isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                       }`}
                       style={{
-                        borderLeft: `6px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : primaryAccent}`,
+                        borderLeft: `5px solid ${idx === 0 ? primaryAccent : secondaryAccent}`,
                       }}
                     >
                       <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-base text-white shrink-0 shadow-xs"
+                        className="w-6 h-6 rounded-md flex items-center justify-center font-black text-xs text-white shrink-0 shadow-xs"
                         style={{
-                          backgroundImage: `linear-gradient(135deg, ${
-                            idx === 0 ? primaryAccent : secondaryAccent
-                          }, ${idx === 0 ? secondaryAccent : primaryAccent})`,
+                          backgroundColor: idx === 0 ? primaryAccent : secondaryAccent,
                         }}
                       >
                         {idx + 1}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-base sm:text-lg md:text-[20px] font-bold leading-relaxed">
+                        <p className="text-xs sm:text-sm font-bold leading-snug truncate">
                           {point}
                         </p>
                       </div>
-
-                      <CheckCircle2
-                        className="w-5 h-5 shrink-0 opacity-70"
-                        style={{ color: idx === 0 ? primaryAccent : secondaryAccent }}
-                      />
                     </div>
                   ))}
               </div>
             )}
           </div>
+
+          {/* Avatar Column (When Positioned on Right) */}
+          {!isLeft && (
+            <div className="w-[26%] sm:w-[24%] shrink-0 flex flex-col justify-end items-center h-full">
+              <PresenterAvatarView slide={slide} config={config} isLeft={false} />
+            </div>
+          )}
+
         </div>
 
         {/* Bottom Bar: Slide Info & Number */}
         <div
-          className={`w-full flex items-center justify-between text-xs font-medium pt-2 border-t ${
+          className={`w-full flex items-center justify-between text-xs font-medium pt-1.5 border-t ${
             isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
           }`}
         >
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-[10px] sm:text-xs">
-              SLAID {slide.slideNumber} • {slide.ethnicity} • {teachingPose.title}
+              SLAID {slide.slideNumber} • {config.characterSheet?.characterName || config.nametagText} ({config.presenterStyle})
             </span>
           </div>
 
           <div
-            className="font-mono font-black text-base sm:text-xl"
+            className="font-mono font-black text-sm sm:text-base"
             style={{
               backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
-            {slide.slideNumber}
+            {slide.slideNumber} / 45
           </div>
         </div>
 

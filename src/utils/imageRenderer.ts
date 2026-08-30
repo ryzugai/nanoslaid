@@ -130,7 +130,9 @@ export async function renderSlideToCanvasDataUrl(
   ctx.restore();
 
   // Soft floor shadow under presenter
-  const presenterShadowX = isLeft ? 280 : width - 280;
+  const presenterX = isLeft ? 80 : 1420;
+  const presenterWidth = 420;
+  const presenterShadowX = presenterX + presenterWidth / 2;
   const shadowGrad = ctx.createRadialGradient(
     presenterShadowX,
     height - 40,
@@ -139,15 +141,30 @@ export async function renderSlideToCanvasDataUrl(
     height - 40,
     260
   );
-  shadowGrad.addColorStop(0, 'rgba(15, 23, 42, 0.2)');
-  shadowGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.05)');
+  shadowGrad.addColorStop(0, 'rgba(15, 23, 42, 0.4)');
+  shadowGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.1)');
   shadowGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = shadowGrad;
   ctx.fillRect(presenterShadowX - 300, height - 90, 600, 80);
 
-  // 2. Main Content Layout Area - Full 16:9 Widescreen Presentation Layout
-  const contentX = 110;
-  const contentWidth = 1700;
+  // 2. Main Content Layout Area - Responsive 70/30 Split with Avatar Presenter
+  const contentX = isLeft ? 540 : 100;
+  const contentWidth = 1280;
+
+  // Draw 3D Presenter Avatar
+  drawAvatarPresenterOnCanvas(
+    ctx,
+    presenterX,
+    220,
+    presenterWidth,
+    780,
+    slide,
+    config,
+    isLeft,
+    primaryAccent,
+    secondaryAccent,
+    isDarkScheme
+  );
 
   // 3. Category / Slide Type Pill Badge
   ctx.save();
@@ -1557,5 +1574,314 @@ function extractPoseWithTransparentBackground(
 
   offCtx.putImageData(imgData, 0, 0);
   return offCanvas;
+}
+
+/**
+ * Draws high-fidelity 3D Pixar / Photorealistic Avatar Presenter directly on Canvas
+ */
+function drawAvatarPresenterOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  slide: SlideData,
+  config: SetupConfig,
+  isLeft: boolean,
+  primaryAccent: string,
+  secondaryAccent: string,
+  isDark: boolean
+) {
+  ctx.save();
+  const centerX = x + w / 2;
+  const isPixar = config.presenterStyle === 'Pixar 3D Style';
+  const charName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
+  const gender = config.characterSheet?.gender || (slide.ethnicity === 'Melayu berhijab' ? 'Wanita' : 'Lelaki');
+  const isHijab = gender === 'Wanita' || slide.ethnicity === 'Melayu berhijab';
+
+  const poseNumber = slide.slideNumber;
+  const isPointing = poseNumber % 3 === 0;
+  const isHoldingTablet = poseNumber % 3 === 1;
+
+  // 1. Presenter Backdrop Glow Pillar
+  const pillarGrad = ctx.createLinearGradient(centerX, y + h, centerX, y + 100);
+  pillarGrad.addColorStop(0, `${primaryAccent}20`);
+  pillarGrad.addColorStop(0.7, `${secondaryAccent}08`);
+  pillarGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = pillarGrad;
+  ctx.fillRect(x + 20, y + 80, w - 40, h - 80);
+
+  // 2. Laser Pointer Light Beam
+  if (isPointing) {
+    ctx.save();
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = primaryAccent;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    if (isLeft) {
+      ctx.moveTo(centerX + 110, y + 360);
+      ctx.lineTo(centerX + 320, y + 320);
+    } else {
+      ctx.moveTo(centerX - 110, y + 360);
+      ctx.lineTo(centerX - 320, y + 320);
+    }
+    ctx.stroke();
+
+    // Laser glow dot at tip
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(isLeft ? centerX + 320 : centerX - 320, y + 320, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 3. Avatar Body / Torso (Navy / Executive Suit)
+  const bodyTopY = y + 420;
+  const bodyBottomY = y + h;
+
+  // Shoulders & Suit Jacket
+  const suitGrad = ctx.createLinearGradient(centerX - 150, bodyTopY, centerX + 150, bodyBottomY);
+  suitGrad.addColorStop(0, '#1E293B');
+  suitGrad.addColorStop(0.5, '#0F172A');
+  suitGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = suitGrad;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 140, bodyBottomY);
+  ctx.lineTo(centerX - 110, bodyTopY + 40);
+  ctx.quadraticCurveTo(centerX, bodyTopY - 10, centerX + 110, bodyTopY + 40);
+  ctx.lineTo(centerX + 140, bodyBottomY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Crisp White Shirt & Lapel
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.moveTo(centerX - 35, bodyTopY + 20);
+  ctx.lineTo(centerX, bodyTopY + 110);
+  ctx.lineTo(centerX + 35, bodyTopY + 20);
+  ctx.closePath();
+  ctx.fill();
+
+  // Corporate Tie / Trim
+  const tieGrad = ctx.createLinearGradient(centerX, bodyTopY + 30, centerX, bodyTopY + 140);
+  tieGrad.addColorStop(0, primaryAccent);
+  tieGrad.addColorStop(1, secondaryAccent);
+  ctx.fillStyle = tieGrad;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 12, bodyTopY + 35);
+  ctx.lineTo(centerX + 12, bodyTopY + 35);
+  ctx.lineTo(centerX + 16, bodyTopY + 125);
+  ctx.lineTo(centerX, bodyTopY + 145);
+  ctx.lineTo(centerX - 16, bodyTopY + 125);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lapel shadows
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 70, bodyTopY + 30);
+  ctx.lineTo(centerX - 25, bodyTopY + 130);
+  ctx.lineTo(centerX - 25, bodyBottomY);
+  ctx.moveTo(centerX + 70, bodyTopY + 30);
+  ctx.lineTo(centerX + 25, bodyTopY + 130);
+  ctx.lineTo(centerX + 25, bodyBottomY);
+  ctx.stroke();
+
+  // 4. Physical Nametag on Chest Lapel
+  if (config.useNametag) {
+    const tagX = isLeft ? centerX + 45 : centerX - 110;
+    const tagY = bodyTopY + 75;
+    const tagWidth = 85;
+    const tagHeight = 26;
+
+    ctx.fillStyle = '#020617';
+    roundRect(ctx, tagX, tagY, tagWidth, tagHeight, 4);
+    ctx.fill();
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Active indicator dot
+    ctx.fillStyle = '#10B981';
+    ctx.beginPath();
+    ctx.arc(tagX + 10, tagY + tagHeight / 2, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Nametag Text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 11px monospace';
+    const cleanTag = charName.length > 9 ? charName.slice(0, 9) : charName;
+    ctx.fillText(cleanTag, tagX + 18, tagY + 17);
+  }
+
+  // 5. Neck & Head
+  const headCenterY = y + 290;
+
+  // Neck
+  const skinGrad = ctx.createRadialGradient(centerX, headCenterY + 80, 10, centerX, headCenterY + 80, 80);
+  skinGrad.addColorStop(0, '#FDDEC2');
+  skinGrad.addColorStop(0.7, '#F5B991');
+  skinGrad.addColorStop(1, '#DE956C');
+  ctx.fillStyle = skinGrad;
+  ctx.fillRect(centerX - 24, headCenterY + 60, 48, 70);
+
+  // Hijab back layer if applicable
+  if (isHijab) {
+    const hijabGrad = ctx.createLinearGradient(centerX, headCenterY - 100, centerX, headCenterY + 120);
+    hijabGrad.addColorStop(0, primaryAccent);
+    hijabGrad.addColorStop(1, '#0E7490');
+    ctx.fillStyle = hijabGrad;
+    ctx.beginPath();
+    ctx.ellipse(centerX, headCenterY + 20, 95, 120, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 3D Head Shape
+  const headRadiusX = isPixar ? 68 : 60;
+  const headRadiusY = isPixar ? 78 : 72;
+  ctx.fillStyle = skinGrad;
+  ctx.beginPath();
+  ctx.ellipse(centerX, headCenterY, headRadiusX, headRadiusY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Male Hair Styling if not Hijab
+  if (!isHijab) {
+    ctx.fillStyle = '#1E1E1E';
+    ctx.beginPath();
+    ctx.ellipse(centerX, headCenterY - 45, 68, 42, 0, Math.PI, 0);
+    ctx.fill();
+    // Front fringe
+    ctx.beginPath();
+    ctx.moveTo(centerX - 65, headCenterY - 40);
+    ctx.quadraticCurveTo(centerX - 20, headCenterY - 20, centerX + 10, headCenterY - 45);
+    ctx.quadraticCurveTo(centerX + 40, headCenterY - 30, centerX + 65, headCenterY - 40);
+    ctx.lineTo(centerX + 65, headCenterY - 60);
+    ctx.lineTo(centerX - 65, headCenterY - 60);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Eyebrows
+  ctx.strokeStyle = '#1E293B';
+  ctx.lineWidth = isPixar ? 5 : 3.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(centerX - 42, headCenterY - 22);
+  ctx.quadraticCurveTo(centerX - 24, headCenterY - 30, centerX - 10, headCenterY - 22);
+  ctx.moveTo(centerX + 10, headCenterY - 22);
+  ctx.quadraticCurveTo(centerX + 24, headCenterY - 30, centerX + 42, headCenterY - 22);
+  ctx.stroke();
+
+  // 3D Expressive Eyes
+  const eyeOffsetX = 26;
+  const eyeY = headCenterY;
+  const eyeRadius = isPixar ? 14 : 10;
+
+  // Whites
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.ellipse(centerX - eyeOffsetX, eyeY, eyeRadius, eyeRadius * 1.15, 0, 0, Math.PI * 2);
+  ctx.ellipse(centerX + eyeOffsetX, eyeY, eyeRadius, eyeRadius * 1.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Iris
+  const irisGrad = ctx.createRadialGradient(centerX - eyeOffsetX, eyeY, 2, centerX - eyeOffsetX, eyeY, eyeRadius);
+  irisGrad.addColorStop(0, '#475569');
+  irisGrad.addColorStop(0.6, '#0F172A');
+  irisGrad.addColorStop(1, '#000000');
+
+  ctx.fillStyle = irisGrad;
+  ctx.beginPath();
+  const lookDir = isLeft ? 3 : -3;
+  ctx.arc(centerX - eyeOffsetX + lookDir, eyeY, eyeRadius * 0.65, 0, Math.PI * 2);
+  ctx.arc(centerX + eyeOffsetX + lookDir, eyeY, eyeRadius * 0.65, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye catchlights
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(centerX - eyeOffsetX + lookDir + 2, eyeY - 3, 3, 0, Math.PI * 2);
+  ctx.arc(centerX + eyeOffsetX + lookDir + 2, eyeY - 3, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Modern Glasses Frame
+  ctx.strokeStyle = primaryAccent;
+  ctx.lineWidth = 2.5;
+  roundRect(ctx, centerX - 46, eyeY - 14, 38, 28, 6);
+  ctx.stroke();
+  roundRect(ctx, centerX + 8, eyeY - 14, 38, 28, 6);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(centerX - 8, eyeY);
+  ctx.lineTo(centerX + 8, eyeY);
+  ctx.stroke();
+
+  // Friendly Smile
+  ctx.strokeStyle = '#9F1239';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(centerX, headCenterY + 32, 18, 0.2 * Math.PI, 0.8 * Math.PI, false);
+  ctx.stroke();
+
+  // 6. Presentation Arms & Accessories
+  if (isHoldingTablet) {
+    // Smart Tablet Device
+    const tabX = isLeft ? centerX + 70 : centerX - 140;
+    const tabY = bodyTopY + 90;
+    ctx.save();
+    ctx.translate(tabX + 35, tabY + 45);
+    ctx.rotate(isLeft ? -0.15 : 0.15);
+    ctx.fillStyle = '#020617';
+    roundRect(ctx, -35, -45, 70, 90, 8);
+    ctx.fill();
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Tablet Screen
+    ctx.fillStyle = '#0F172A';
+    roundRect(ctx, -30, -40, 60, 80, 4);
+    ctx.fill();
+
+    // Glowing Analytics Bars
+    ctx.fillStyle = '#10B981';
+    ctx.fillRect(-22, 10, 10, 20);
+    ctx.fillStyle = primaryAccent;
+    ctx.fillRect(-8, -5, 10, 35);
+    ctx.fillStyle = secondaryAccent;
+    ctx.fillRect(6, -20, 10, 50);
+    ctx.restore();
+  }
+
+  // 7. Presenter Stand Nameplate Badge (Underneath avatar)
+  const standY = y + h - 50;
+  const standGrad = ctx.createLinearGradient(centerX - 130, standY, centerX + 130, standY);
+  standGrad.addColorStop(0, '#0F172A');
+  standGrad.addColorStop(0.5, '#1E293B');
+  standGrad.addColorStop(1, '#0F172A');
+
+  ctx.fillStyle = standGrad;
+  roundRect(ctx, centerX - 120, standY, 240, 38, 19);
+  ctx.fill();
+  ctx.strokeStyle = primaryAccent;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Glowing status dot
+  ctx.fillStyle = '#10B981';
+  ctx.beginPath();
+  ctx.arc(centerX - 95, standY + 19, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 14px "Plus Jakarta Sans", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${charName} • ${isPixar ? '3D PIXAR' : '3D REALISTIC'}`, centerX + 6, standY + 24);
+  ctx.textAlign = 'left';
+
+  ctx.restore();
 }
 

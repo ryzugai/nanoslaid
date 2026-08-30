@@ -390,22 +390,22 @@ function cleanAndExtractBullets(rawLines: string[]): string[] {
 
 /**
  * Automatically detects the best matching infographic archetype based on actual content,
- * ensuring rich diversity across 11 non-list, eye-catching archetypes without repetition.
+ * populating the visual structures strictly with the user's actual points.
  */
 function detectArchetypeFromContent(title: string, points: string[], idx: number, isMalay = true): {
   infographicType: InfographicArchetype;
   meta: InfographicMetaData;
 } {
   const combined = (title + ' ' + points.join(' ')).toLowerCase();
+  const safePoints = points.length > 0 ? points : [
+    isMalay ? `Intipati dan prinsip utama bagi ${title}.` : `Core principles and foundation for ${title}.`,
+    isMalay ? `Pelaksanaan dan aplikasi praktikal ${title}.` : `Practical implementation and application for ${title}.`,
+    isMalay ? `Pencapaian standard kualiti dan hasil ${title}.` : `Quality standards and measurable impact for ${title}.`
+  ];
 
   // 1. Process / Steps / Flowchart (Stepped Horizontal Flow)
-  if (/proses|langkah|aliran|step|flow|stage|procedure|kaedah/i.test(combined) || idx % 11 === 0) {
-    const steps = (points.length >= 2 ? points : [
-      isMalay ? 'Perancangan Awal: Penilaian keperluan & analisis skop pelaksanaan.' : 'Initial Planning: Requirements assessment and scope analysis.',
-      isMalay ? 'Pelaksanaan Teras: Penggunaan automasi dan integrasi teknologi moden.' : 'Core Execution: Deployment of automation and modern technology.',
-      isMalay ? 'Kawalan Kualiti: Pengesahan standard keselamatan dan ketepatan data.' : 'Quality Assurance: Verification of security standards and data accuracy.',
-      isMalay ? 'Penilaian Impak: Pengukuran keberhasilan dan laporan prestasi berkala.' : 'Impact Review: Performance reporting and milestone evaluation.'
-    ]).slice(0, 4).map((pt, sIdx) => {
+  if (/proses|langkah|aliran|step|flow|stage|procedure|kaedah|peringkat/i.test(combined) || idx % 11 === 0) {
+    const steps = safePoints.slice(0, 4).map((pt, sIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
         step: sIdx + 1,
@@ -421,18 +421,14 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
 
   // 2. Stat / Metric Gauge (Radial Gauges & KPI Telemetry)
   if (/peratus|kadar|metrik|statistik|%|kpi|angka|jumlah|kos|unjuran|pencapaian/i.test(combined) || idx % 11 === 1) {
-    const stats = (points.length >= 2 ? points : [
-      isMalay ? '94% Peningkatan Kecekapan Operasi' : '94% Operational Efficiency Gain',
-      isMalay ? '99.8% Ketepatan & Kebolehpercayaan Data' : '99.8% Data Accuracy & Reliability',
-      isMalay ? '65% Penjimatan Masa & Kos Pelaksanaan' : '65% Time & Cost Savings'
-    ]).slice(0, 3).map((pt, sIdx) => {
+    const stats = safePoints.slice(0, 3).map((pt, sIdx) => {
       const numMatch = pt.match(/(\d+(?:\.\d+)?%?|\$\d+|\b\d+x\b)/i);
-      const val = numMatch ? numMatch[1] : sIdx === 0 ? '94%' : sIdx === 1 ? '99.8%' : '65%';
-      const cleanLabel = pt.replace(val, '').replace(/^[:–-\s]+/, '').trim() || (isMalay ? 'Pencapaian Utama' : 'Key Benchmark');
+      const val = numMatch ? numMatch[1] : sIdx === 0 ? '100%' : sIdx === 1 ? '98.5%' : '85%';
+      const cleanLabel = pt.replace(val, '').replace(/^[:–-\s]+/, '').trim() || (isMalay ? `Faktor ${sIdx + 1}` : `Metric ${sIdx + 1}`);
       return {
-        label: cleanLabel,
+        label: cleanLabel.length > 30 ? cleanLabel.slice(0, 30) + '...' : cleanLabel,
         value: val,
-        change: isMalay ? '+35% Kenaikan' : '+35% Growth',
+        change: isMalay ? 'Pencapaian Optimum' : 'Optimal Target',
         icon: 'trending-up'
       };
     });
@@ -443,13 +439,8 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 3. Multi-Pillar (Architectural Columns with 3D Emblems)
-  if (/pilar|tonggak|teras|komponen|prinsip|pillar|dimension|dimensi|elemen|aspek/i.test(combined) || idx % 11 === 2) {
-    const pillars = (points.length >= 2 ? points : [
-      isMalay ? 'Tadbir Urus: Pematuhan standard integriti data tertinggi.' : 'Governance: Strict adherence to high integrity data standards.',
-      isMalay ? 'Inovasi Digital: Pemanfaatan algoritma pintar & automasi.' : 'Digital Innovation: Leveraging smart algorithms and automation.',
-      isMalay ? 'Pemberdayaan Bakat: Latihan kemahiran berterusan untuk pasukan.' : 'Talent Enablement: Continuous upskilling and team training.',
-      isMalay ? 'Sinergi Ekosistem: Jalinan kerjasama strategik jangka panjang.' : 'Ecosystem Synergy: Long-term strategic partnership alignment.'
-    ]).slice(0, 4).map((pt, pIdx) => {
+  if (/pilar|tonggak|teras|komponen|prinsip|pillar|dimension|dimensi|elemen|aspek|rukun|bahagian/i.test(combined) || idx % 11 === 2) {
+    const pillars = safePoints.slice(0, 3).map((pt, pIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
         title: parts[0]?.trim() || (isMalay ? `Teras 0${pIdx + 1}` : `Pillar 0${pIdx + 1}`),
@@ -463,102 +454,64 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
     };
   }
 
-  // 4. Comparison Matrix (Side-by-Side Contrast: Challenges vs Smart Solutions)
-  if (/banding|vs|versus|cabaran|lawan|matrix|perbezaan|tradisional/i.test(combined) || idx % 11 === 3) {
+  // 4. Comparison Matrix (Side-by-Side Contrast)
+  if (/banding|vs|versus|cabaran|lawan|matrix|perbezaan|tradisional|kebaikan|keburukan/i.test(combined) || idx % 11 === 3) {
+    const half = Math.ceil(safePoints.length / 2);
+    const leftItems = safePoints.slice(0, half).length > 0 ? safePoints.slice(0, half) : [isMalay ? 'Aspek tradisi / cabaran' : 'Conventional challenge'];
+    const rightItems = safePoints.slice(half).length > 0 ? safePoints.slice(half) : [isMalay ? 'Solusi / Amalan terbaik' : 'Best practice solution'];
+
     return {
       infographicType: 'COMPARISON_MATRIX',
       meta: {
         archetype: 'COMPARISON_MATRIX',
         comparison: {
-          leftTitle: isMalay ? 'Cabaran & Kaedah Tradisional' : 'Legacy Challenges',
-          leftItems: isMalay ? [
-            'Proses manual yang perlahan dan berisiko tinggi',
-            'Silo data yang menyukarkan ketelusan maklumat',
-            'Kos penyelenggaraan tinggi tanpa automasi moden'
-          ] : [
-            'Slow manual workflows prone to errors',
-            'Data silos hindering institutional transparency',
-            'High operational overhead without modern automation'
-          ],
-          rightTitle: isMalay ? 'Solusi & Transformasi Pintar' : 'Smart Digital Transformation',
-          rightItems: isMalay ? [
-            'Automasi pintar mempercepat kitaran kerja sehingga 3x',
-            'Pangkalan data berpusat dengan akses masa nyata',
-            'Keberkesanan kos jangka panjang dan ketahanan tinggi'
-          ] : [
-            'Intelligent automation accelerating cycles 3x',
-            'Centralized architecture with real-time analytics',
-            'Long-term cost efficiency and operational resilience'
-          ]
+          leftTitle: isMalay ? 'Aspek / Cabaran Sedia Ada' : 'Existing Baseline / Challenges',
+          leftItems,
+          rightTitle: isMalay ? 'Standard / Penyelesaian Disyorkan' : 'Recommended Standard / Solution',
+          rightItems
         }
       }
     };
   }
 
-  // 5. Radial Ecosystem (Central Hub & 4 Orbiting Satellites)
-  if (/ekosistem|hab|pusat|satelit|jejaring|integrasi|hub|network/i.test(combined) || idx % 11 === 4) {
+  // 5. Radial Ecosystem (Central Hub & Satellites)
+  if (/ekosistem|hab|pusat|satelit|jejaring|integrasi|hub|network|hubungan/i.test(combined) || idx % 11 === 4) {
+    const satellites = safePoints.slice(0, 4).map((pt, satIdx) => {
+      const parts = pt.split(/[:–-]/);
+      return {
+        title: parts[0]?.trim() || (isMalay ? `Elemen ${satIdx + 1}` : `Element ${satIdx + 1}`),
+        desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+      };
+    });
     return {
       infographicType: 'RADIAL_ECOSYSTEM',
       meta: {
         archetype: 'RADIAL_ECOSYSTEM',
         nodes: {
-          centerNode: title.length < 35 ? title : (isMalay ? 'Hab Strategik Bersepadu' : 'Integrated Strategic Hub'),
-          satellites: [
-            {
-              title: isMalay ? 'Modul Analisis Pintar' : 'Smart Analytics Module',
-              desc: isMalay ? 'Pemprosesan data masa nyata untuk membuat keputusan tepat.' : 'Real-time telemetry for precision decision making.'
-            },
-            {
-              title: isMalay ? 'Gerbang Keselamatan' : 'Security Gateway',
-              desc: isMalay ? 'Penyulitan end-to-end dengan kawalan akses ketat.' : 'End-to-end encryption with zero-trust access control.'
-            },
-            {
-              title: isMalay ? 'Enjin Automasi' : 'Automation Engine',
-              desc: isMalay ? 'Penyelarasan aliran kerja berulang secara konsisten.' : 'Orchestrating repetitive workflows consistently.'
-            },
-            {
-              title: isMalay ? 'Papan Pemuka Pantau' : 'Monitoring Dashboard',
-              desc: isMalay ? 'Visualisasi KPI holistik untuk pengurusan eksekutif.' : 'Holistic executive KPI telemetry visualization.'
-            }
-          ]
+          centerNode: title.length < 35 ? title : (isMalay ? 'Fokus Utama' : 'Core Focus'),
+          satellites
         }
       }
     };
   }
 
   // 6. Timeline Roadmap (Phased Milestone Roadmap)
-  if (/garis masa|hala tuju|milestone|road\s*map|fasa|jangka\s*masa|timeline/i.test(combined) || idx % 11 === 5) {
+  if (/garis masa|hala tuju|milestone|road\s*map|fasa|jangka\s*masa|timeline|sejarah|kronologi/i.test(combined) || idx % 11 === 5) {
+    const phases = safePoints.slice(0, 4).map((pt, phIdx) => {
+      const parts = pt.split(/[:–-]/);
+      return {
+        phase: isMalay ? `Fasa 0${phIdx + 1}` : `Phase 0${phIdx + 1}`,
+        milestone: parts[0]?.trim() || (isMalay ? `Pencapaian ${phIdx + 1}` : `Milestone ${phIdx + 1}`),
+        desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+      };
+    });
     return {
       infographicType: 'TIMELINE_ROADMAP',
-      meta: {
-        archetype: 'TIMELINE_ROADMAP',
-        phases: [
-          {
-            phase: isMalay ? 'Fasa 1: Q1' : 'Phase 1: Q1',
-            milestone: isMalay ? 'Penjajaran & Asas' : 'Alignment & Foundation',
-            desc: isMalay ? 'Menetapkan rangka kerja tadbir urus dan audit kesediaan.' : 'Establishing governance frameworks and readiness audit.'
-          },
-          {
-            phase: isMalay ? 'Fasa 2: Q2' : 'Phase 2: Q2',
-            milestone: isMalay ? 'Pembangunan & Integrasi' : 'Build & Integration',
-            desc: isMalay ? 'Melancarkan modul teras dan penyelarasan pangkalan data.' : 'Deploying core modules and aligning primary databases.'
-          },
-          {
-            phase: isMalay ? 'Fasa 3: Q3' : 'Phase 3: Q3',
-            milestone: isMalay ? 'Pengujian & Pelancaran' : 'Testing & Rollout',
-            desc: isMalay ? 'Ujian penerimaan pengguna menyeluruh dan latihan intensif.' : 'Comprehensive user acceptance testing and team training.'
-          },
-          {
-            phase: isMalay ? 'Fasa 4: Q4' : 'Phase 4: Q4',
-            milestone: isMalay ? 'Pengoptimuman Mampan' : 'Sustainable Scale',
-            desc: isMalay ? 'Penambahbaikan berterusan berasaskan maklum balas audiens.' : 'Continuous refinement driven by real audience feedback.'
-          }
-        ]
-      }
+      meta: { archetype: 'TIMELINE_ROADMAP', phases }
     };
   }
 
-  // 7. Quadrant Matrix (2x2 Strategic Priority Matrix)
+  // 7. Quadrant Matrix (2x2 Decision / Strategic Matrix)
   if (/kuadran|quadrant|matriks|matrix|keutamaan|swot|keputusan|priority/i.test(combined) || idx % 11 === 6) {
     return {
       infographicType: 'QUADRANT_MATRIX',
@@ -566,31 +519,31 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
         archetype: 'QUADRANT_MATRIX',
         quadrants: {
           q1: {
-            title: isMalay ? 'Keutamaan Segera' : 'Immediate Priority',
-            desc: isMalay ? 'Impak tinggi dan kebolehlaksanaan pantas untuk pulangan cepat.' : 'High impact, rapid execution delivering immediate ROI.',
-            badge: isMalay ? 'Tindakan Serta-Merta' : 'Act Now'
+            title: safePoints[0] ? safePoints[0].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 1' : 'Priority 1'),
+            desc: safePoints[0] || (isMalay ? 'Fokus tindakan segera berimpak tinggi.' : 'Immediate high impact action focus.'),
+            badge: isMalay ? 'Segera' : 'Urgent'
           },
           q2: {
-            title: isMalay ? 'Inovasi Strategik' : 'Strategic Innovation',
-            desc: isMalay ? 'Pelaburan jangka panjang bagi kepimpinan masa depan.' : 'Long-term investment securing future market leadership.',
-            badge: isMalay ? 'Rancang Rapi' : 'Plan Ahead'
+            title: safePoints[1] ? safePoints[1].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 2' : 'Priority 2'),
+            desc: safePoints[1] || (isMalay ? 'Perancangan berstruktur jangka panjang.' : 'Structured long term planning.'),
+            badge: isMalay ? 'Rancang' : 'Plan'
           },
           q3: {
-            title: isMalay ? 'Pelaksanaan Taktikal' : 'Tactical Wins',
-            desc: isMalay ? 'Tugasan mudah yang menyokong kestabilan harian.' : 'Straightforward tasks maintaining daily operational stability.',
-            badge: isMalay ? 'Automasi Cekap' : 'Automate'
+            title: safePoints[2] ? safePoints[2].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 3' : 'Priority 3'),
+            desc: safePoints[2] || (isMalay ? 'Pelaksanaan rutin sokongan operasi.' : 'Routine operational support.'),
+            badge: isMalay ? 'Laksana' : 'Execute'
           },
           q4: {
-            title: isMalay ? 'Kawalan Kualiti & Audit' : 'Quality Assurance',
-            desc: isMalay ? 'Penandaarasan berterusan untuk menghapuskan pembaziran.' : 'Continuous benchmarking eliminating resource waste.',
-            badge: isMalay ? 'Pantau Rapi' : 'Audit'
+            title: safePoints[3] ? safePoints[3].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 4' : 'Priority 4'),
+            desc: safePoints[3] || (isMalay ? 'Pemantauan kualiti berterusan.' : 'Ongoing quality oversight.'),
+            badge: isMalay ? 'Pantau' : 'Monitor'
           }
         }
       }
     };
   }
 
-  // 8. Pyramid Hierarchy (3-Tier Layered Strategic Pyramid)
+  // 8. Pyramid Hierarchy (Layered Strategic Pyramid)
   if (/piramid|pyramid|hierarki|hierarchy|aras|lapisan|tier|struktur|level/i.test(combined) || idx % 11 === 7) {
     return {
       infographicType: 'PYRAMID_HIERARCHY',
@@ -598,73 +551,55 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
         archetype: 'PYRAMID_HIERARCHY',
         pyramid: {
           top: {
-            level: isMalay ? 'Aras 1: Strategik' : 'Tier 1: Strategic',
-            title: isMalay ? 'Visi & Hala Tuju Kepimpinan' : 'Leadership Vision & Purpose',
-            desc: isMalay ? 'Menetapkan hala tuju makro, falsafah organisasi, dan standard kecemerlangan.' : 'Setting macro direction, core philosophy, and standards of excellence.'
+            level: isMalay ? 'Aras 1: Kemuncak' : 'Tier 1: Apex',
+            title: safePoints[0] ? safePoints[0].split(/[:–-]/)[0].trim() : (isMalay ? 'Matlamat Tertinggi' : 'Ultimate Goal'),
+            desc: safePoints[0] || (isMalay ? 'Hasil akhir dan visi pelaksanaan.' : 'Final outcome and vision.')
           },
           middle: {
-            level: isMalay ? 'Aras 2: Taktikal' : 'Tier 2: Tactical',
-            title: isMalay ? 'Sistem & Operasi Pintar' : 'Smart Systems & Operations',
-            desc: isMalay ? 'Penyelarasan aliran kerja antara jabatan dengan automasi proses.' : 'Cross-functional workflow orchestration and process automation.'
+            level: isMalay ? 'Aras 2: Pelaksanaan' : 'Tier 2: Execution',
+            title: safePoints[1] ? safePoints[1].split(/[:–-]/)[0].trim() : (isMalay ? 'Kaedah & Operasi' : 'Methods & Ops'),
+            desc: safePoints[1] || (isMalay ? 'Langkah taktikal dan aktiviti utama.' : 'Tactical steps and core activities.')
           },
           base: {
             level: isMalay ? 'Aras 3: Asas' : 'Tier 3: Foundation',
-            title: isMalay ? 'Infrastruktur & Integriti Data' : 'Infrastructure & Data Integrity',
-            desc: isMalay ? 'Pangkalan data selamat, keselamatan maklumat, dan pematuhan peraturan.' : 'Secure databases, information security, and governance compliance.'
+            title: safePoints[2] ? safePoints[2].split(/[:–-]/)[0].trim() : (isMalay ? 'Prinsip Asas' : 'Core Principles'),
+            desc: safePoints[2] || (isMalay ? 'Keperluan asas dan sumber penting.' : 'Foundational requirements and resources.')
           }
         }
       }
     };
   }
 
-  // 9. Circular Cycle (4-Stage Continuous PDCA Loop)
+  // 9. Circular Cycle (Continuous Loop)
   if (/kitaran|cycle|gelung|loop|pdca|pusingan|berterusan|continuous/i.test(combined) || idx % 11 === 8) {
+    const stages = safePoints.slice(0, 4).map((pt, stIdx) => {
+      const parts = pt.split(/[:–-]/);
+      return {
+        stage: stIdx + 1,
+        title: parts[0]?.trim() || (isMalay ? `Peringkat 0${stIdx + 1}` : `Stage 0${stIdx + 1}`),
+        desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+      };
+    });
     return {
       infographicType: 'CIRCULAR_CYCLE',
-      meta: {
-        archetype: 'CIRCULAR_CYCLE',
-        cycle: {
-          stages: [
-            {
-              stage: 1,
-              title: isMalay ? 'Rancang (Plan)' : 'Plan',
-              desc: isMalay ? 'Menentukan matlamat jelas, KPI terukur, dan pengagihan sumber optimum.' : 'Defining clear goals, measurable KPIs, and optimal resource allocation.'
-            },
-            {
-              stage: 2,
-              title: isMalay ? 'Laksana (Do)' : 'Execute',
-              desc: isMalay ? 'Menggerakkan pelan operasi berpandukan standard prosedur kerja piawai.' : 'Mobilizing operational execution guided by standard operating procedures.'
-            },
-            {
-              stage: 3,
-              title: isMalay ? 'Nilai (Check)' : 'Evaluate',
-              desc: isMalay ? 'Menganalisis hasil sebenar berbanding sasaran menggunakan data analitik.' : 'Benchmarking actual outcomes against targets with rigorous analytics.'
-            },
-            {
-              stage: 4,
-              title: isMalay ? 'Tambah Baik (Act)' : 'Optimize',
-              desc: isMalay ? 'Membuat penyesuaian strategi dan memperkukuh kecekapan keseluruhan.' : 'Iterating strategic refinements to maximize ongoing performance.'
-            }
-          ]
-        }
-      }
+      meta: { archetype: 'CIRCULAR_CYCLE', cycle: { stages } }
     };
   }
 
-  // 10. Case Study Showcase (3-Panel Problem -> Solution -> Impact)
+  // 10. Case Study Showcase (Challenge -> Solution -> Impact)
   if (/kajian kes|case study|impak|masalah|solusi|bukti|hasil|pembuktian/i.test(combined) || idx % 11 === 9) {
     return {
       infographicType: 'CASE_STUDY_SHOWCASE',
       meta: {
         archetype: 'CASE_STUDY_SHOWCASE',
         caseStudy: {
-          challenge: isMalay ? 'Cabaran Operasi Utama' : 'Primary Operational Challenge',
-          challengeDesc: isMalay ? 'Kerumitan pengurusan manual menyebabkan kelewatan 40% dan ketidaktelusan aliran maklumat.' : 'Manual overhead causing 40% delays and fragmented communication across teams.',
-          solution: isMalay ? 'Penyelesaian Holistik Dilaksana' : 'Applied Holistic Solution',
-          solutionDesc: isMalay ? 'Penyepaduan platform pintar berpusat dengan automasi pengesahan dan papan pemuka analitik.' : 'Centralized digital workflow platform with automated validation and real-time oversight.',
-          result: isMalay ? 'Impak & Hasil Terbukti' : 'Verified Measurable Impact',
-          resultDesc: isMalay ? 'Peningkatan produktiviti menyeluruh, penjimatan kos operasi, dan kepuasan audiens 98%.' : 'Total productivity boost, direct operational savings, and 98% user satisfaction.',
-          impactMetric: isMalay ? '+85% Keberhasilan Mampan' : '+85% Sustainable Gain'
+          challenge: isMalay ? 'Isu / Cabaran Utama' : 'Core Challenge',
+          challengeDesc: safePoints[0] || (isMalay ? `Cabaran dan situasi sedia ada dalam ${title}.` : `Context and challenges in ${title}.`),
+          solution: isMalay ? 'Langkah / Solusi Praktikal' : 'Practical Solution',
+          solutionDesc: safePoints[1] || (isMalay ? `Kaedah penyelesaian berkesan bagi ${title}.` : `Effective solutions applied for ${title}.`),
+          result: isMalay ? 'Hasil & Impak Kejayaan' : 'Verified Positive Result',
+          resultDesc: safePoints[2] || (isMalay ? `Kefahaman mendalam dan keberhasilan positif.` : `Positive outcome achieved.`),
+          impactMetric: '100% Berjaya'
         }
       }
     };
@@ -676,19 +611,19 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
     meta: {
       archetype: 'BENTO_GRID',
       bento: {
-        spotlightTitle: isMalay ? 'Sorotan Strategik Utama' : 'Core Strategic Spotlight',
-        spotlightDesc: points.length > 0 ? points[0] : (isMalay ? 'Pelaksanaan rangka kerja berimpak tinggi yang menggabungkan automasi pintar dan tadbir urus mampan.' : 'Deployment of high-impact frameworks combining smart automation with sustainable governance.'),
+        spotlightTitle: title,
+        spotlightDesc: safePoints[0],
         metric1: {
-          label: isMalay ? 'Peningkatan Produktiviti' : 'Productivity Rate',
-          value: '96.4%',
-          badge: isMalay ? 'Sasaran Tercapai' : 'Target Exceeded'
+          label: safePoints[1] ? (safePoints[1].length > 25 ? safePoints[1].slice(0, 25) + '...' : safePoints[1]) : (isMalay ? 'Standard Kualiti' : 'Standard Quality'),
+          value: '100%',
+          badge: isMalay ? 'Diperakui' : 'Verified'
         },
         metric2: {
-          label: isMalay ? 'Ketepatan Standard' : 'Standard Accuracy',
-          value: '99.9%',
-          badge: isMalay ? 'Standard ISO' : 'ISO Benchmark'
+          label: safePoints[2] ? (safePoints[2].length > 25 ? safePoints[2].slice(0, 25) + '...' : safePoints[2]) : (isMalay ? 'Keberhasilan' : 'Impact Rate'),
+          value: 'Tinggi',
+          badge: isMalay ? 'Optimum' : 'Optimal'
         },
-        takeaway: points.length > 1 ? points[1] : (isMalay ? 'Kejayaan pelaksanaan bersandarkan kepada penjajaran strategi yang teliti dan pemantauan berterusan.' : 'Successful delivery relies on meticulous alignment and persistent verification.')
+        takeaway: safePoints[safePoints.length - 1]
       }
     }
   };
@@ -946,31 +881,34 @@ function generateDynamicMcqQuestions(outlines: OutlineItem[], isMalay: boolean, 
   for (let j = 1; j <= 15; j++) {
     const relatedSlide = outlines[(j * 2 - 2) % outlines.length];
     const slideTitle = relatedSlide ? relatedSlide.title : topic;
-    const slidePoint = relatedSlide && relatedSlide.points.length > 0 ? relatedSlide.points[0] : `prinsip asas ${slideTitle}`;
+    const pts = relatedSlide && relatedSlide.points.length > 0 ? relatedSlide.points : [`Prinsip asas ${slideTitle}`];
+    const mainPoint = pts[0];
+    const secondPoint = pts[1] || (isMalay ? `memastikan kefahaman mendalam mengenai ${slideTitle}` : `ensuring deep understanding of ${slideTitle}`);
+    const thirdPoint = pts[2] || (isMalay ? `menilai hasil aplikasi ${slideTitle}` : `evaluating practical outcomes of ${slideTitle}`);
 
     if (isMalay) {
       mcqs.push({
-        question: `Berdasarkan perbincangan mengenai '${slideTitle}', apakah objektif atau langkah paling tepat yang perlu ditekankan?`,
+        question: `Berdasarkan topik '${slideTitle}', apakah perkara utama yang perlu difahami dan dilaksanakan?`,
         options: [
-          { label: 'A', text: `Melaksanakan ${slidePoint} dengan pemantauan standard kualiti yang ketat` },
-          { label: 'B', text: 'Mengabaikan penilaian risiko dan terus memulakan operasi tanpa perancangan' },
-          { label: 'C', text: 'Mengurangkan ketelusan dokumentasi audit bagi mempercepatkan kelulusan' },
-          { label: 'D', text: 'Menyerahkan keseluruhan kawalan kepada pihak ketiga tanpa pengawasan' }
+          { label: 'A', text: `${mainPoint}` },
+          { label: 'B', text: `Mengabaikan perincian ${secondPoint}` },
+          { label: 'C', text: `Melaksanakan perkara bertentangan dengan ${thirdPoint}` },
+          { label: 'D', text: `Meninggalkan kefahaman asas tanpa sebarang tindakan` }
         ],
         correctOption: 'A',
-        explanation: `Pelaksanaan yang teliti terhadap '${slidePoint}' memastikan tadbir urus kukuh dan pencapaian hasil mampan bagi ${slideTitle}.`
+        explanation: `Fokus utama '${slideTitle}' adalah ${mainPoint} bagi memastikan pemahaman dan pelaksanaan yang tepat.`
       });
     } else {
       mcqs.push({
-        question: `Based on the discussion in '${slideTitle}', what is the primary strategic action required?`,
+        question: `Based on '${slideTitle}', which of the following is the primary principle or action required?`,
         options: [
-          { label: 'A', text: `Execute '${slidePoint}' with strict quality governance and accountability` },
-          { label: 'B', text: 'Bypass risk assessments to rush delivery timelines without validation' },
-          { label: 'C', text: 'Minimize transparency and documentation to avoid compliance checks' },
-          { label: 'D', text: 'Outsource critical decision-making without internal oversight' }
+          { label: 'A', text: `${mainPoint}` },
+          { label: 'B', text: `Disregarding the details of ${secondPoint}` },
+          { label: 'C', text: `Acting contrary to ${thirdPoint}` },
+          { label: 'D', text: `Abandoning foundational concepts without action` }
         ],
         correctOption: 'A',
-        explanation: `Executing '${slidePoint}' ensures robust governance and sustainable results for ${slideTitle}.`
+        explanation: `The core focus of '${slideTitle}' is ${mainPoint} to ensure accurate understanding and execution.`
       });
     }
   }
