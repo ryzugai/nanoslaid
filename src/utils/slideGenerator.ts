@@ -681,9 +681,19 @@ export function extractAndGenerate30Infographics(config: SetupConfig, isMalay: b
       const bullets = cleanAndExtractBullets(slide.bullets.length > 0 ? slide.bullets : slide.rawText.split('\n'));
       
       // Main slide
+      const effectivePoints = bullets.length > 0
+        ? bullets.slice(0, 4)
+        : slide.rawText && slide.rawText.trim().length > 10
+        ? slide.rawText.split('\n').map(s => s.trim()).filter(s => s.length > 5 && s !== slideTitle).slice(0, 3)
+        : [
+            isMalay ? `Kandungan teras dan huraian utama bagi ${slideTitle}.` : `Core content and primary insights for ${slideTitle}.`,
+            isMalay ? `Langkah pelaksanaan dan aplikasi praktikal ${slideTitle}.` : `Implementation roadmap and practical applications of ${slideTitle}.`,
+            isMalay ? `Penetapan standard kualiti dan impak hasil ${slideTitle}.` : `Quality standards and verified impact of ${slideTitle}.`
+          ];
+
       slidesPool.push({
         title: slideTitle,
-        points: bullets.length > 0 ? bullets.slice(0, 4) : [`Intipati perbincangan bagi ${slideTitle}`]
+        points: effectivePoints
       });
 
       // If slide has multiple sub-bullets, expand them into dedicated deep-dive slides
@@ -691,14 +701,16 @@ export function extractAndGenerate30Infographics(config: SetupConfig, isMalay: b
         for (let bIdx = 0; bIdx < bullets.length; bIdx++) {
           const bText = bullets[bIdx];
           const colonSplit = bText.split(/[:–-]/);
-          const subTitle = colonSplit.length > 1 && colonSplit[0].length < 40 ? colonSplit[0].trim() : `${slideTitle} (Perincian ${bIdx + 1})`;
+          const subTitle = colonSplit.length > 1 && colonSplit[0].length < 40 && colonSplit[0].length > 3
+            ? colonSplit[0].trim()
+            : `${slideTitle} • ${isMalay ? 'Bahagian' : 'Part'} ${bIdx + 1}`;
           const subDesc = colonSplit.length > 1 ? colonSplit.slice(1).join(' ').trim() : bText;
           slidesPool.push({
             title: subTitle,
             points: [
               subDesc,
-              `Analisis dan pelaksanaan terperinci bagi ${subTitle}`,
-              `Penyelarasan standard dan pematuhan kualiti ${slideTitle}`
+              isMalay ? `Perincian pelaksanaan dan analisis bagi ${subTitle}.` : `Detailed execution and operational analysis for ${subTitle}.`,
+              isMalay ? `Penyelarasan hasil dengan objektif ${slideTitle}.` : `Alignment of outcomes with core objectives of ${slideTitle}.`
             ],
             parentTitle: slideTitle
           });

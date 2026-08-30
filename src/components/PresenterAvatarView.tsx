@@ -63,17 +63,20 @@ export const PresenterAvatarView: React.FC<PresenterAvatarViewProps> = ({
         {charSheet?.imageUrl ? (
           <div className="relative group w-full flex flex-col items-center">
             <div
-              className="relative w-28 sm:w-36 aspect-square rounded-2xl overflow-hidden border-2 shadow-2xl bg-slate-900/90 flex items-center justify-center"
-              style={{ borderColor: primaryAccent }}
+              className="relative w-36 sm:w-44 h-48 sm:h-56 rounded-2xl overflow-hidden border-2 shadow-2xl bg-slate-950/80 flex items-center justify-center p-1.5"
+              style={{
+                borderColor: primaryAccent,
+                boxShadow: `0 8px 28px -6px ${primaryAccent}44`,
+              }}
             >
               <img
                 src={charSheet.imageUrl}
                 alt={charName}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain drop-shadow-md rounded-xl"
                 referrerPolicy="no-referrer"
               />
               <div
-                className="absolute inset-0 pointer-events-none opacity-20"
+                className="absolute inset-0 pointer-events-none opacity-15 rounded-2xl"
                 style={{
                   background: `linear-gradient(to top, ${primaryAccent}, transparent)`,
                 }}
@@ -83,14 +86,14 @@ export const PresenterAvatarView: React.FC<PresenterAvatarViewProps> = ({
             {/* Glowing Nametag Badge */}
             {config.useNametag && (
               <div
-                className="mt-2 px-2.5 py-0.5 rounded-md border text-[10px] sm:text-xs font-mono font-black text-white shadow-lg tracking-wider flex items-center gap-1"
+                className="mt-2 px-3 py-1 rounded-lg border text-[11px] sm:text-xs font-mono font-black text-white shadow-lg tracking-wider flex items-center gap-1.5"
                 style={{
                   backgroundColor: '#0F172A',
                   borderColor: primaryAccent,
-                  boxShadow: `0 0 10px ${primaryAccent}66`,
+                  boxShadow: `0 0 14px ${primaryAccent}66`,
                 }}
               >
-                <Sparkles className="w-2.5 h-2.5" style={{ color: primaryAccent }} />
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>{charName}</span>
               </div>
             )}

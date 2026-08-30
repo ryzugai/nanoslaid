@@ -147,23 +147,34 @@ export async function renderSlideToCanvasDataUrl(
   ctx.fillStyle = shadowGrad;
   ctx.fillRect(presenterShadowX - 300, height - 90, 600, 80);
 
+  // Preload Character Sheet Image if provided
+  let preloadedCharImg: HTMLImageElement | null = null;
+  if (config.characterSheet?.imageUrl) {
+    try {
+      preloadedCharImg = await loadImage(config.characterSheet.imageUrl);
+    } catch (e) {
+      console.warn('Failed to preload character sheet image:', e);
+    }
+  }
+
   // 2. Main Content Layout Area - Responsive 70/30 Split with Avatar Presenter
   const contentX = isLeft ? 540 : 100;
   const contentWidth = 1280;
 
-  // Draw 3D Presenter Avatar
+  // Draw Presenter Avatar (Uses uploaded character sheet if provided, else refined 3D lecturer)
   drawAvatarPresenterOnCanvas(
     ctx,
     presenterX,
-    220,
+    180,
     presenterWidth,
-    780,
+    840,
     slide,
     config,
     isLeft,
     primaryAccent,
     secondaryAccent,
-    isDarkScheme
+    isDarkScheme,
+    preloadedCharImg
   );
 
   // 3. Category / Slide Type Pill Badge
@@ -1577,7 +1588,9 @@ function extractPoseWithTransparentBackground(
 }
 
 /**
- * Draws high-fidelity 3D Pixar / Photorealistic Avatar Presenter directly on Canvas
+ * Draws high-fidelity 3D Avatar Presenter directly on Canvas.
+ * Directly renders the user's uploaded Character Sheet image when available,
+ * or renders a studio-grade 3D presenter with proper lighting, attire, and teaching props.
  */
 function drawAvatarPresenterOnCanvas(
   ctx: CanvasRenderingContext2D,
@@ -1590,7 +1603,8 @@ function drawAvatarPresenterOnCanvas(
   isLeft: boolean,
   primaryAccent: string,
   secondaryAccent: string,
-  isDark: boolean
+  isDark: boolean,
+  preloadedCharImg: HTMLImageElement | null
 ) {
   ctx.save();
   const centerX = x + w / 2;
@@ -1603,15 +1617,145 @@ function drawAvatarPresenterOnCanvas(
   const isPointing = poseNumber % 3 === 0;
   const isHoldingTablet = poseNumber % 3 === 1;
 
-  // 1. Presenter Backdrop Glow Pillar
-  const pillarGrad = ctx.createLinearGradient(centerX, y + h, centerX, y + 100);
-  pillarGrad.addColorStop(0, `${primaryAccent}20`);
-  pillarGrad.addColorStop(0.7, `${secondaryAccent}08`);
+  // 1. Studio Floor Glow & Stage Light
+  const pillarGrad = ctx.createLinearGradient(centerX, y + h, centerX, y + 40);
+  pillarGrad.addColorStop(0, `${primaryAccent}28`);
+  pillarGrad.addColorStop(0.6, `${secondaryAccent}0C`);
   pillarGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = pillarGrad;
-  ctx.fillRect(x + 20, y + 80, w - 40, h - 80);
+  ctx.fillRect(x - 20, y + 20, w + 40, h - 20);
 
-  // 2. Laser Pointer Light Beam
+  // 2. CASE A: USER UPLOADED A CHARACTER SHEET IMAGE
+  if (preloadedCharImg && preloadedCharImg.naturalWidth > 0) {
+    const cardX = x + 10;
+    const cardY = y + 40;
+    const cardW = w - 20;
+    const cardH = h - 110;
+
+    // Outer Glow & Executive Stage Frame
+    ctx.save();
+    ctx.shadowColor = `${primaryAccent}55`;
+    ctx.shadowBlur = 32;
+    ctx.shadowOffsetY = 12;
+
+    // Sleek Frame Background
+    ctx.fillStyle = isDark ? '#0F172A' : '#FFFFFF';
+    roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+    ctx.fill();
+
+    // Gradient Accent Border
+    const borderGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    borderGrad.addColorStop(0, primaryAccent);
+    borderGrad.addColorStop(1, secondaryAccent);
+    ctx.strokeStyle = borderGrad;
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // Draw Character Image inside Stage Frame (with rounded clipping)
+    ctx.save();
+    roundRect(ctx, cardX + 4, cardY + 4, cardW - 8, cardH - 8, 24);
+    ctx.clip();
+
+    // Center and scale image properly
+    const imgAspect = preloadedCharImg.naturalWidth / preloadedCharImg.naturalHeight;
+    const targetAspect = (cardW - 8) / (cardH - 8);
+
+    let drawW = cardW - 8;
+    let drawH = cardH - 8;
+    let drawX = cardX + 4;
+    let drawY = cardY + 4;
+
+    if (imgAspect > targetAspect) {
+      drawW = (cardH - 8) * imgAspect;
+      drawX = cardX + 4 - (drawW - (cardW - 8)) / 2;
+    } else {
+      drawH = (cardW - 8) / imgAspect;
+      drawY = cardY + 4 - (drawH - (cardH - 8)) / 2;
+    }
+
+    ctx.drawImage(preloadedCharImg, drawX, drawY, drawW, drawH);
+
+    // Subtle inner studio vignette
+    const innerVignette = ctx.createLinearGradient(cardX, cardY + cardH - 120, cardX, cardY + cardH);
+    innerVignette.addColorStop(0, 'transparent');
+    innerVignette.addColorStop(1, 'rgba(15, 23, 42, 0.7)');
+    ctx.fillStyle = innerVignette;
+    ctx.fillRect(cardX + 4, cardY + cardH - 124, cardW - 8, 120);
+    ctx.restore();
+
+    // Laser / Interactive Hologram Beam from Character towards Slide Content
+    if (isPointing) {
+      ctx.save();
+      ctx.strokeStyle = primaryAccent;
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = primaryAccent;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      if (isLeft) {
+        ctx.moveTo(cardX + cardW - 10, cardY + cardH * 0.45);
+        ctx.lineTo(cardX + cardW + 180, cardY + cardH * 0.35);
+      } else {
+        ctx.moveTo(cardX + 10, cardY + cardH * 0.45);
+        ctx.lineTo(cardX - 180, cardY + cardH * 0.35);
+      }
+      ctx.stroke();
+
+      // Sparkle Tip
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(isLeft ? cardX + cardW + 180 : cardX - 180, cardY + cardH * 0.35, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Executive Floating Nametag Badge
+    const tagY = cardY + cardH - 32;
+    ctx.save();
+    ctx.font = '900 16px "Plus Jakarta Sans", monospace';
+    const tagText = `${charName}`;
+    const tagW = Math.min(cardW - 40, ctx.measureText(tagText).width + 48);
+    const tagX = centerX - tagW / 2;
+
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#0F172A';
+    roundRect(ctx, tagX, tagY, tagW, 36, 12);
+    ctx.fill();
+
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Active Green Dot
+    ctx.fillStyle = '#10B981';
+    ctx.beginPath();
+    ctx.arc(tagX + 16, tagY + 18, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText(tagText, centerX + 8, tagY + 24);
+    ctx.restore();
+
+    // Stand Base Plate
+    const basePlateY = y + h - 50;
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+    roundRect(ctx, centerX - 140, basePlateY, 280, 36, 18);
+    ctx.fill();
+
+    ctx.font = '800 13px "Plus Jakarta Sans", monospace';
+    ctx.fillStyle = primaryAccent;
+    ctx.textAlign = 'center';
+    ctx.fillText(`WATAK RASMI • ${config.presenterStyle.toUpperCase()}`, centerX, basePlateY + 23);
+    ctx.textAlign = 'left';
+
+    ctx.restore();
+    return;
+  }
+
+  // 3. CASE B: NO CHARACTER SHEET UPLOADED (RENDER HIGH-CRAFT 3D STUDIO LECTURER)
+  // Laser Pointer Light Beam
   if (isPointing) {
     ctx.save();
     ctx.strokeStyle = primaryAccent;
@@ -1636,11 +1780,10 @@ function drawAvatarPresenterOnCanvas(
     ctx.restore();
   }
 
-  // 3. Avatar Body / Torso (Navy / Executive Suit)
+  // Torso / Suit Jacket
   const bodyTopY = y + 420;
   const bodyBottomY = y + h;
 
-  // Shoulders & Suit Jacket
   const suitGrad = ctx.createLinearGradient(centerX - 150, bodyTopY, centerX + 150, bodyBottomY);
   suitGrad.addColorStop(0, '#1E293B');
   suitGrad.addColorStop(0.5, '#0F172A');
@@ -1654,7 +1797,7 @@ function drawAvatarPresenterOnCanvas(
   ctx.closePath();
   ctx.fill();
 
-  // Crisp White Shirt & Lapel
+  // White Shirt & Lapels
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
   ctx.moveTo(centerX - 35, bodyTopY + 20);
@@ -1663,7 +1806,7 @@ function drawAvatarPresenterOnCanvas(
   ctx.closePath();
   ctx.fill();
 
-  // Corporate Tie / Trim
+  // Tie
   const tieGrad = ctx.createLinearGradient(centerX, bodyTopY + 30, centerX, bodyTopY + 140);
   tieGrad.addColorStop(0, primaryAccent);
   tieGrad.addColorStop(1, secondaryAccent);
@@ -1677,49 +1820,33 @@ function drawAvatarPresenterOnCanvas(
   ctx.closePath();
   ctx.fill();
 
-  // Lapel shadows
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(centerX - 70, bodyTopY + 30);
-  ctx.lineTo(centerX - 25, bodyTopY + 130);
-  ctx.lineTo(centerX - 25, bodyBottomY);
-  ctx.moveTo(centerX + 70, bodyTopY + 30);
-  ctx.lineTo(centerX + 25, bodyTopY + 130);
-  ctx.lineTo(centerX + 25, bodyBottomY);
-  ctx.stroke();
-
-  // 4. Physical Nametag on Chest Lapel
+  // Nametag
   if (config.useNametag) {
     const tagX = isLeft ? centerX + 45 : centerX - 110;
     const tagY = bodyTopY + 75;
-    const tagWidth = 85;
-    const tagHeight = 26;
+    const tagWidth = 90;
+    const tagHeight = 28;
 
     ctx.fillStyle = '#020617';
-    roundRect(ctx, tagX, tagY, tagWidth, tagHeight, 4);
+    roundRect(ctx, tagX, tagY, tagWidth, tagHeight, 6);
     ctx.fill();
     ctx.strokeStyle = primaryAccent;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Active indicator dot
     ctx.fillStyle = '#10B981';
     ctx.beginPath();
-    ctx.arc(tagX + 10, tagY + tagHeight / 2, 3.5, 0, Math.PI * 2);
+    ctx.arc(tagX + 12, tagY + tagHeight / 2, 3.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Nametag Text
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 11px monospace';
+    ctx.font = '900 12px monospace';
     const cleanTag = charName.length > 9 ? charName.slice(0, 9) : charName;
-    ctx.fillText(cleanTag, tagX + 18, tagY + 17);
+    ctx.fillText(cleanTag, tagX + 22, tagY + 18);
   }
 
-  // 5. Neck & Head
+  // Neck & Head
   const headCenterY = y + 290;
-
-  // Neck
   const skinGrad = ctx.createRadialGradient(centerX, headCenterY + 80, 10, centerX, headCenterY + 80, 80);
   skinGrad.addColorStop(0, '#FDDEC2');
   skinGrad.addColorStop(0.7, '#F5B991');
@@ -1727,7 +1854,7 @@ function drawAvatarPresenterOnCanvas(
   ctx.fillStyle = skinGrad;
   ctx.fillRect(centerX - 24, headCenterY + 60, 48, 70);
 
-  // Hijab back layer if applicable
+  // Hijab or Hair
   if (isHijab) {
     const hijabGrad = ctx.createLinearGradient(centerX, headCenterY - 100, centerX, headCenterY + 120);
     hijabGrad.addColorStop(0, primaryAccent);
@@ -1738,7 +1865,7 @@ function drawAvatarPresenterOnCanvas(
     ctx.fill();
   }
 
-  // 3D Head Shape
+  // Head
   const headRadiusX = isPixar ? 68 : 60;
   const headRadiusY = isPixar ? 78 : 72;
   ctx.fillStyle = skinGrad;
@@ -1746,13 +1873,11 @@ function drawAvatarPresenterOnCanvas(
   ctx.ellipse(centerX, headCenterY, headRadiusX, headRadiusY, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Male Hair Styling if not Hijab
   if (!isHijab) {
     ctx.fillStyle = '#1E1E1E';
     ctx.beginPath();
     ctx.ellipse(centerX, headCenterY - 45, 68, 42, 0, Math.PI, 0);
     ctx.fill();
-    // Front fringe
     ctx.beginPath();
     ctx.moveTo(centerX - 65, headCenterY - 40);
     ctx.quadraticCurveTo(centerX - 20, headCenterY - 20, centerX + 10, headCenterY - 45);
@@ -1763,7 +1888,7 @@ function drawAvatarPresenterOnCanvas(
     ctx.fill();
   }
 
-  // Eyebrows
+  // Eyebrows & Eyes
   ctx.strokeStyle = '#1E293B';
   ctx.lineWidth = isPixar ? 5 : 3.5;
   ctx.lineCap = 'round';
@@ -1774,24 +1899,20 @@ function drawAvatarPresenterOnCanvas(
   ctx.quadraticCurveTo(centerX + 24, headCenterY - 30, centerX + 42, headCenterY - 22);
   ctx.stroke();
 
-  // 3D Expressive Eyes
   const eyeOffsetX = 26;
   const eyeY = headCenterY;
   const eyeRadius = isPixar ? 14 : 10;
 
-  // Whites
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
   ctx.ellipse(centerX - eyeOffsetX, eyeY, eyeRadius, eyeRadius * 1.15, 0, 0, Math.PI * 2);
   ctx.ellipse(centerX + eyeOffsetX, eyeY, eyeRadius, eyeRadius * 1.15, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Iris
   const irisGrad = ctx.createRadialGradient(centerX - eyeOffsetX, eyeY, 2, centerX - eyeOffsetX, eyeY, eyeRadius);
   irisGrad.addColorStop(0, '#475569');
   irisGrad.addColorStop(0.6, '#0F172A');
   irisGrad.addColorStop(1, '#000000');
-
   ctx.fillStyle = irisGrad;
   ctx.beginPath();
   const lookDir = isLeft ? 3 : -3;
@@ -1799,14 +1920,14 @@ function drawAvatarPresenterOnCanvas(
   ctx.arc(centerX + eyeOffsetX + lookDir, eyeY, eyeRadius * 0.65, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eye catchlights
+  // Eye highlights
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
   ctx.arc(centerX - eyeOffsetX + lookDir + 2, eyeY - 3, 3, 0, Math.PI * 2);
   ctx.arc(centerX + eyeOffsetX + lookDir + 2, eyeY - 3, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Modern Glasses Frame
+  // Glasses
   ctx.strokeStyle = primaryAccent;
   ctx.lineWidth = 2.5;
   roundRect(ctx, centerX - 46, eyeY - 14, 38, 28, 6);
@@ -1818,7 +1939,7 @@ function drawAvatarPresenterOnCanvas(
   ctx.lineTo(centerX + 8, eyeY);
   ctx.stroke();
 
-  // Friendly Smile
+  // Smile
   ctx.strokeStyle = '#9F1239';
   ctx.lineWidth = 4;
   ctx.lineCap = 'round';
@@ -1826,9 +1947,8 @@ function drawAvatarPresenterOnCanvas(
   ctx.arc(centerX, headCenterY + 32, 18, 0.2 * Math.PI, 0.8 * Math.PI, false);
   ctx.stroke();
 
-  // 6. Presentation Arms & Accessories
+  // Tablet accessory
   if (isHoldingTablet) {
-    // Smart Tablet Device
     const tabX = isLeft ? centerX + 70 : centerX - 140;
     const tabY = bodyTopY + 90;
     ctx.save();
@@ -1841,12 +1961,10 @@ function drawAvatarPresenterOnCanvas(
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Tablet Screen
     ctx.fillStyle = '#0F172A';
     roundRect(ctx, -30, -40, 60, 80, 4);
     ctx.fill();
 
-    // Glowing Analytics Bars
     ctx.fillStyle = '#10B981';
     ctx.fillRect(-22, 10, 10, 20);
     ctx.fillStyle = primaryAccent;
@@ -1856,7 +1974,7 @@ function drawAvatarPresenterOnCanvas(
     ctx.restore();
   }
 
-  // 7. Presenter Stand Nameplate Badge (Underneath avatar)
+  // Nameplate Base at bottom
   const standY = y + h - 50;
   const standGrad = ctx.createLinearGradient(centerX - 130, standY, centerX + 130, standY);
   standGrad.addColorStop(0, '#0F172A');
@@ -1870,7 +1988,6 @@ function drawAvatarPresenterOnCanvas(
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Glowing status dot
   ctx.fillStyle = '#10B981';
   ctx.beginPath();
   ctx.arc(centerX - 95, standY + 19, 5, 0, Math.PI * 2);

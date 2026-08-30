@@ -62,9 +62,41 @@ export async function parsePptxFile(file: File): Promise<PptParseResult> {
 
     const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
 
-    // Extract text paragraphs
+    // Extract all text paragraphs and shapes
     const paragraphs = xmlDoc.getElementsByTagName('a:p');
     const paragraphTexts: string[] = [];
+
+    // Also look for specific title elements
+    let extractedTitle = '';
+
+    const spNodes = xmlDoc.getElementsByTagName('p:sp');
+    for (let s = 0; s < spNodes.length; s++) {
+      const sp = spNodes[s];
+      const phNodes = sp.getElementsByTagName('p:ph');
+      let isTitleShape = false;
+      for (let h = 0; h < phNodes.length; h++) {
+        const phType = phNodes[h].getAttribute('type');
+        if (phType === 'title' || phType === 'ctrTitle') {
+          isTitleShape = true;
+          break;
+        }
+      }
+
+      const txBody = sp.getElementsByTagName('p:txBody')[0];
+      if (txBody) {
+        const textElements = txBody.getElementsByTagName('a:t');
+        let shapeText = '';
+        for (let t = 0; t < textElements.length; t++) {
+          shapeText += textElements[t].textContent || '';
+        }
+        shapeText = shapeText.trim();
+        if (shapeText.length > 0) {
+          if (isTitleShape && !extractedTitle) {
+            extractedTitle = shapeText;
+          }
+        }
+      }
+    }
 
     for (let p = 0; p < paragraphs.length; p++) {
       const pElem = paragraphs[p];
@@ -74,22 +106,36 @@ export async function parsePptxFile(file: File): Promise<PptParseResult> {
         pText += textNodes[t].textContent || '';
       }
       pText = pText.trim();
-      if (pText.length > 0) {
+      if (pText.length > 0 && !paragraphTexts.includes(pText)) {
         paragraphTexts.push(pText);
       }
     }
 
     // Determine title vs bullets
-    let title = `Slaid ${i + 1}`;
+    let title = extractedTitle || '';
     let bullets: string[] = [];
 
-    if (paragraphTexts.length > 0) {
+    if (!title && paragraphTexts.length > 0) {
       title = paragraphTexts[0];
       bullets = paragraphTexts.slice(1);
+    } else if (title) {
+      bullets = paragraphTexts.filter((pt) => pt !== title);
     }
 
-    // Clean up empty lines
-    bullets = bullets.filter((b) => b.trim().length > 0);
+    // Fallback title if empty or purely numeric
+    if (!title || /^(slaid|slide)?\s*\d+$/i.test(title)) {
+      if (bullets.length > 0) {
+        title = bullets[0];
+        bullets = bullets.slice(1);
+      } else {
+        title = `Slaid ${i + 1}`;
+      }
+    }
+
+    // Clean up empty lines and redundant numbering
+    bullets = bullets
+      .map((b) => b.replace(/^[•\-\*\d+\.]\s*/, '').trim())
+      .filter((b) => b.length > 0);
 
     const rawText = paragraphTexts.join('\n');
 
