@@ -133,77 +133,85 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               isLeft ? 'order-1' : 'order-2'
             }`}
           >
-            <div className="relative flex flex-col items-center w-full max-w-[240px]">
+            <div className="relative flex flex-col items-center w-full max-w-[260px] h-full justify-end">
               
-              {/* 3D Explanatory Avatar Figure */}
-              <div className="relative flex flex-col items-center w-full">
-                {/* Visual Head / Portrait */}
-                {config.characterSheet?.imageUrl ? (
-                  <div className="w-24 sm:w-32 lg:w-36 h-24 sm:h-32 lg:h-36 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-slate-900 relative z-20">
+              {/* Presenter Figure / Card */}
+              {config.characterSheet?.imageUrl ? (
+                <div className="relative w-full h-[80%] max-h-[340px] flex flex-col items-center justify-end group">
+                  {/* Ambient Glow behind character */}
+                  <div
+                    className="absolute inset-0 rounded-2xl opacity-30 blur-xl pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle, ${primaryAccent} 0%, ${secondaryAccent} 60%, transparent 80%)`,
+                    }}
+                  />
+
+                  {/* Character Standing Image */}
+                  <div className="relative z-10 w-full h-full flex items-end justify-center overflow-hidden rounded-2xl">
                     <img
                       src={config.characterSheet.imageUrl}
                       alt={charName}
-                      className="w-full h-full object-cover object-top"
+                      className="max-h-full w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)]"
                     />
-                    <div className="absolute inset-0 ring-2 ring-inset ring-cyan-400/50 rounded-full pointer-events-none" />
                   </div>
-                ) : (
-                  <div className="w-20 sm:w-28 lg:w-32 h-20 sm:h-28 lg:h-32 rounded-full bg-gradient-to-tr from-amber-300 via-amber-200 to-amber-100 border-4 border-white shadow-xl flex items-center justify-center relative overflow-hidden z-20">
-                    <User className="w-10 sm:w-16 lg:w-18 h-10 sm:h-16 lg:h-18 text-slate-800" />
-                  </div>
-                )}
 
-                {/* 3D Illustrated Presenter Torso with Dynamic Hand Gestures */}
-                <div
-                  className="w-28 sm:w-40 lg:w-48 h-24 sm:h-32 lg:h-36 rounded-t-3xl shadow-2xl flex flex-col items-center pt-3 relative mt-[-16px] z-10 border-t-2 border-white/60"
-                  style={{
-                    backgroundImage: `linear-gradient(180deg, #1E3A8A 0%, #172554 60%, #0F172A 100%)`,
-                  }}
-                >
-                  {/* Chest Pocket Nametag */}
+                  {/* Executive Floating Nametag Badge */}
                   {config.useNametag && (
-                    <div className="mt-0.5 px-3 py-1 rounded-md bg-white border-2 border-slate-900 shadow-md text-xs sm:text-sm font-black font-mono tracking-wider text-slate-950 uppercase truncate max-w-[90%]">
-                      {charName}
+                    <div className="absolute bottom-2 z-20 px-3.5 py-1.5 rounded-xl bg-slate-950/90 border border-cyan-400/50 shadow-2xl backdrop-blur-md flex items-center gap-2 max-w-[95%]">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                      <span className="text-xs sm:text-sm font-black font-mono tracking-wider text-white uppercase truncate">
+                        {charName}
+                      </span>
                     </div>
                   )}
+                </div>
+              ) : (
+                <div className="relative w-full h-[75%] max-h-[300px] rounded-2xl bg-gradient-to-b from-slate-800/90 to-slate-950/90 border border-white/15 p-4 flex flex-col items-center justify-between shadow-2xl backdrop-blur-md">
+                  <div className="w-20 sm:w-24 h-20 sm:h-24 rounded-full bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-100 border-2 border-white shadow-lg flex items-center justify-center relative overflow-hidden">
+                    <User className="w-10 sm:w-14 h-10 sm:h-14 text-slate-800" />
+                  </div>
+
+                  <div className="text-center w-full">
+                    {config.useNametag && (
+                      <div className="px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-xs font-black font-mono uppercase text-white truncate">
+                        {charName}
+                      </div>
+                    )}
+                    <span className="text-[11px] text-cyan-300 font-bold mt-1 block">
+                      {slide.ethnicity} • {slide.characterPosition}
+                    </span>
+                  </div>
 
                   {/* Dynamic Explanatory Gesture Indicator */}
-                  <div className="mt-auto pb-2.5 flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     {poseType === 'POINTING_OPEN_PALM' && (
-                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-cyan-500/25 text-cyan-300 font-extrabold border border-cyan-400/40 flex items-center gap-1 shadow-xs">
-                        <Zap className="w-3.5 h-3.5 text-cyan-400" /> Menunjuk Poin
+                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-cyan-400" /> Menunjuk Poin
                       </span>
                     )}
                     {poseType === 'HOLDING_STYLUS' && (
-                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/25 text-blue-300 font-extrabold border border-blue-400/40 flex items-center gap-1 shadow-xs">
-                        <Radio className="w-3.5 h-3.5 text-blue-400" /> Penunjuk Pintar
+                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-400/30 flex items-center gap-1">
+                        <Radio className="w-3 h-3 text-blue-400" /> Penunjuk Pintar
                       </span>
                     )}
                     {poseType === 'UPWARD_METRIC_GESTURE' && (
-                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-300 font-extrabold border border-emerald-400/40 flex items-center gap-1 shadow-xs">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Sorotan Metrik
+                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-emerald-400" /> Sorotan Metrik
                       </span>
                     )}
                     {poseType === 'QUIZ_HOST' && (
-                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 font-extrabold border border-amber-400/40 flex items-center gap-1 shadow-xs">
-                        <HelpCircle className="w-3.5 h-3.5 text-amber-400" /> Hos Kuiz
+                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-400/30 flex items-center gap-1">
+                        <HelpCircle className="w-3 h-3 text-amber-400" /> Hos Kuiz
                       </span>
                     )}
                     {poseType === 'WELCOMING_KEYNOTE' && (
-                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-purple-500/25 text-purple-300 font-extrabold border border-purple-400/40 flex items-center gap-1 shadow-xs">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Ucaptama
+                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-400/30 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-purple-400" /> Ucaptama
                       </span>
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Presenter Name Badge */}
-              <div className="mt-1.5 text-center">
-                <span className="text-xs sm:text-sm font-extrabold px-3 py-1 rounded-lg shadow-sm bg-black/70 text-white backdrop-blur-xs border border-white/10">
-                  {charName} • {slide.characterPosition}
-                </span>
-              </div>
+              )}
             </div>
           </div>
 

@@ -156,71 +156,11 @@ CRITICAL MANDATES:
         console.warn('Gemini 3.1 Flash Image error, trying fallback models:', genError?.message);
 
         try {
-          // Fallback model 1: Imagen 3 (imagen-3.0-generate-002)
-          const imagenResponse = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
-            prompt,
-            config: {
-              numberOfImages: 1,
-              aspectRatio: '16:9',
-              outputMimeType: 'image/png',
-            },
-          });
-
-          if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
-            const imgBase64 = imagenResponse.generatedImages[0].image.imageBytes;
-            if (imgBase64) {
-              return res.json({
-                success: true,
-                imageUrl: `data:image/png;base64,${imgBase64}`,
-                source: 'imagen-3.0-generate-002',
-                model: 'Imagen 3.0 (16:9 HD Infographic)',
-              });
-            }
-          }
-        } catch (imagenError: any) {
-          console.warn('Imagen 3 fallback error, trying gemini-2.5-flash-image:', imagenError?.message);
-        }
-
-        try {
-          // Fallback model 2: Gemini 2.5 Flash Image
-          const flash25Response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-              parts,
-            },
-            config: {
-              imageConfig: {
-                aspectRatio: '16:9',
-              },
-            },
-          });
-
-          for (const candidate of flash25Response.candidates || []) {
-            for (const part of candidate.content?.parts || []) {
-              if (part.inlineData && part.inlineData.data) {
-                const base64EncodeString = part.inlineData.data;
-                const mimeType = part.inlineData.mimeType || 'image/png';
-                const imageUrl = `data:${mimeType};base64,${base64EncodeString}`;
-                return res.json({
-                  success: true,
-                  imageUrl,
-                  source: 'gemini-2.5-flash-image',
-                  model: 'Gemini 2.5 Flash Image',
-                });
-              }
-            }
-          }
-        } catch (flash25Error: any) {
-          console.warn('Gemini 2.5 Flash Image error, trying gemini-3.1-flash-lite-image:', flash25Error?.message);
-        }
-
-        try {
-          // Fallback model 3: Nano Banana Lite (gemini-3.1-flash-lite-image)
+          // Fallback model 1: Nano Banana Lite (gemini-3.1-flash-lite-image)
           const liteResponse = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite-image',
             contents: {
-              parts: [{ text: prompt }],
+              parts,
             },
             config: {
               imageConfig: {
@@ -246,6 +186,33 @@ CRITICAL MANDATES:
           }
         } catch (liteError: any) {
           console.warn('Fallback lite image model error:', liteError?.message);
+        }
+
+        try {
+          // Fallback model 2: Imagen 3 (imagen-3.0-generate-002)
+          const imagenResponse = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt,
+            config: {
+              numberOfImages: 1,
+              aspectRatio: '16:9',
+              outputMimeType: 'image/png',
+            },
+          });
+
+          if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
+            const imgBase64 = imagenResponse.generatedImages[0].image.imageBytes;
+            if (imgBase64) {
+              return res.json({
+                success: true,
+                imageUrl: `data:image/png;base64,${imgBase64}`,
+                source: 'imagen-3.0-generate-002',
+                model: 'Imagen 3.0 (16:9 HD Infographic)',
+              });
+            }
+          }
+        } catch (imagenError: any) {
+          console.warn('Imagen 3 fallback error:', imagenError?.message);
         }
       }
 

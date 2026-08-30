@@ -889,7 +889,8 @@ function drawMCQQuizLayout(
 }
 
 /**
- * Draws dynamic 3D Presenter Avatar customized to the user's config
+ * Draws high-fidelity 3D Presenter Avatar customized to the user's config.
+ * Intelligently isolates and renders the uploaded character sheet or draws an executive 3D avatar.
  */
 async function draw3DPresenterAvatar(
   ctx: CanvasRenderingContext2D,
@@ -904,10 +905,148 @@ async function draw3DPresenterAvatar(
   const charName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
 
   ctx.save();
+
+  // 1. If user uploaded a Character Sheet image, extract and render the real character cleanly
+  if (config.characterSheet?.imageUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = config.characterSheet.imageUrl;
+      await new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
+
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        // Multi-view sheet detection (3-pose turnaround sheets have width > height * 1.15)
+        const isMultiViewSheet = img.naturalWidth > img.naturalHeight * 1.15;
+        
+        let cropX = 0;
+        let cropY = 0;
+        let cropW = img.naturalWidth;
+        let cropH = img.naturalHeight;
+
+        if (isMultiViewSheet) {
+          // Extract the primary front-facing pose (center portion of turnaround sheet)
+          cropX = Math.round(img.naturalWidth * 0.28);
+          cropW = Math.round(img.naturalWidth * 0.44);
+          cropY = 0;
+          cropH = img.naturalHeight;
+        }
+
+        // Process transparency / chroma isolation on offscreen canvas
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = cropW;
+        offCanvas.height = cropH;
+        const offCtx = offCanvas.getContext('2d');
+
+        if (offCtx) {
+          offCtx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+          const imgData = offCtx.getImageData(0, 0, cropW, cropH);
+          const data = imgData.data;
+
+          // Sample corner color to detect white / solid light background
+          const cornerR = data[0];
+          const cornerG = data[1];
+          const cornerB = data[2];
+          const isLightBg = cornerR > 215 && cornerG > 215 && cornerB > 215;
+
+          if (isLightBg) {
+            // Smoothly remove solid light background with soft anti-aliased threshold
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              const brightness = (r + g + b) / 3;
+
+              if (brightness > 240) {
+                data[i + 3] = 0; // Fully transparent
+              } else if (brightness > 218) {
+                // Feather edge
+                const alphaFactor = (240 - brightness) / 22;
+                data[i + 3] = Math.round(data[i + 3] * alphaFactor);
+              }
+            }
+            offCtx.putImageData(imgData, 0, 0);
+          }
+
+          // Calculate standing scale & positioning
+          const targetHeight = Math.min(760, 1080 * 0.72);
+          const aspect = cropW / cropH;
+          const targetWidth = Math.min(460, targetHeight * aspect);
+          const drawX = cx - targetWidth / 2;
+          const drawY = 1045 - targetHeight;
+
+          // Ambient floor contact shadow
+          const shadowGrad = ctx.createRadialGradient(cx, 1055, 20, cx, 1055, targetWidth * 0.65);
+          shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+          shadowGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
+          shadowGrad.addColorStop(1, 'transparent');
+          ctx.fillStyle = shadowGrad;
+          ctx.beginPath();
+          ctx.ellipse(cx, 1055, targetWidth * 0.55, 25, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Ambient studio rim back-glow behind character
+          const backGlow = ctx.createRadialGradient(cx, drawY + targetHeight * 0.45, 40, cx, drawY + targetHeight * 0.45, 340);
+          backGlow.addColorStop(0, `${primaryAccent}2A`);
+          backGlow.addColorStop(0.6, `${secondaryAccent}10`);
+          backGlow.addColorStop(1, 'transparent');
+          ctx.fillStyle = backGlow;
+          ctx.fillRect(cx - 350, drawY - 50, 700, targetHeight + 100);
+
+          // Draw the high-resolution isolated presenter
+          ctx.drawImage(offCanvas, drawX, drawY, targetWidth, targetHeight);
+
+          // Executive Floating Acrylic Nametag Badge
+          if (config.useNametag) {
+            const nametagX = isLeft ? cx - 80 : cx - 120;
+            const nametagY = Math.min(1000, drawY + targetHeight * 0.78);
+
+            ctx.font = '900 20px "Plus Jakarta Sans", monospace';
+            const textWidth = ctx.measureText(charName).width;
+            const tagW = textWidth + 44;
+            const tagH = 42;
+
+            // Glassmorphic badge background
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            roundRect(ctx, nametagX, nametagY, tagW, tagH, 10);
+            ctx.fill();
+
+            // Accent border
+            ctx.strokeStyle = primaryAccent;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Speaker icon dot
+            ctx.fillStyle = '#10B981';
+            ctx.beginPath();
+            ctx.arc(nametagX + 20, nametagY + tagH / 2, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Text
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(charName, nametagX + 34, nametagY + 28);
+          }
+
+          ctx.restore();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not process characterSheet image, using procedural avatar:', e);
+    }
+  }
+
+  // 2. Procedural High-Craft Executive Presenter (When no image is uploaded)
   // Ambient Floor Contact Shadow
   const shadowGrad = ctx.createRadialGradient(cx, 1060, 20, cx, 1060, 260);
-  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
-  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.18)');
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
+  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
   shadowGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = shadowGrad;
   ctx.beginPath();
@@ -933,12 +1072,13 @@ async function draw3DPresenterAvatar(
     skinGrad.addColorStop(1, '#FDBA74');
   }
 
+  // Executive Suit Body
   ctx.fillStyle = shirtGrad;
   ctx.beginPath();
   ctx.moveTo(cx - 150, cy - 20);
-  ctx.lineTo(cx + 150, cy - 20);
+  ctx.quadraticCurveTo(cx - 165, cy + 200, cx - 175, cy + 420);
   ctx.lineTo(cx + 175, cy + 420);
-  ctx.lineTo(cx - 175, cy + 420);
+  ctx.quadraticCurveTo(cx + 165, cy + 200, cx + 150, cy - 20);
   ctx.closePath();
   ctx.fill();
 
@@ -999,113 +1139,68 @@ async function draw3DPresenterAvatar(
     ctx.fillText(charName, nametagX + 15, nametagY + 24);
   }
 
-  // If user uploaded a Character Sheet image, embed as high-definition circular avatar face with studio rim glow
-  let characterImageDrawn = false;
-  if (config.characterSheet?.imageUrl) {
-    try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = config.characterSheet.imageUrl;
-      await new Promise<void>((resolve) => {
-        if (img.complete && img.naturalWidth > 0) {
-          resolve();
-        } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }
-      });
+  // 3D Head & Face
+  ctx.fillStyle = skinGrad;
+  ctx.fillRect(cx - 45, cy - 90, 90, 70);
 
-      if (img.naturalWidth > 0) {
-        ctx.save();
-        // Glowing rim around avatar head
-        ctx.strokeStyle = primaryAccent;
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.arc(cx, cy - 160, 115, 0, Math.PI * 2);
-        ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
+  ctx.fill();
 
-        // Circular clipping mask for character portrait
-        ctx.beginPath();
-        ctx.arc(cx, cy - 160, 110, 0, Math.PI * 2);
-        ctx.clip();
+  if (slide.ethnicity === 'Melayu berhijab') {
+    // Elegant Corporate Hijab
+    ctx.fillStyle = primaryAccent;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 160, 120, Math.PI * 0.7, Math.PI * 2.3);
+    ctx.lineTo(cx + 90, cy + 30);
+    ctx.lineTo(cx - 90, cy + 30);
+    ctx.closePath();
+    ctx.fill();
 
-        // Draw portrait centered
-        const sSize = Math.min(img.naturalWidth, img.naturalHeight);
-        const sx = (img.naturalWidth - sSize) / 2;
-        const sy = (img.naturalHeight - sSize) * 0.15; // slightly top-aligned for face
-        ctx.drawImage(img, sx, sy, sSize, sSize, cx - 110, cy - 270, 220, 220);
-        ctx.restore();
-        characterImageDrawn = true;
-      }
-    } catch (e) {
-      console.warn('Fallback to procedural avatar head:', e);
-    }
-  }
-
-  if (!characterImageDrawn) {
-    // 3D Head & Face
+    // Hijab inner face frame
     ctx.fillStyle = skinGrad;
-    ctx.fillRect(cx - 45, cy - 90, 90, 70);
-
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy - 150, 75, 95, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    if (slide.ethnicity === 'Melayu berhijab') {
-      // Elegant Corporate Hijab
-      ctx.fillStyle = primaryAccent;
-      ctx.beginPath();
-      ctx.arc(cx, cy - 160, 120, Math.PI * 0.7, Math.PI * 2.3);
-      ctx.lineTo(cx + 90, cy + 30);
-      ctx.lineTo(cx - 90, cy + 30);
-      ctx.closePath();
-      ctx.fill();
-
-      // Hijab inner face frame
-      ctx.fillStyle = skinGrad;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy - 150, 75, 95, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Stylized Modern Hair
-      ctx.fillStyle = '#1E293B';
-      ctx.beginPath();
-      ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
-      ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
-      ctx.lineTo(cx - 95, cy - 110);
-      ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // 3D Eyes
-    drawEye(ctx, cx - 40, cy - 165);
-    drawEye(ctx, cx + 40, cy - 165);
-
-    // Glasses frames if professional
-    if (config.characterSheet?.specs?.includes('cermin mata') || !isFemale) {
-      ctx.strokeStyle = '#0F172A';
-      ctx.lineWidth = 3.5;
-      ctx.strokeRect(cx - 62, cy - 185, 45, 38);
-      ctx.strokeRect(cx + 17, cy - 185, 45, 38);
-      ctx.beginPath();
-      ctx.moveTo(cx - 17, cy - 165);
-      ctx.lineTo(cx + 17, cy - 165);
-      ctx.stroke();
-    }
-
-    // Warm Confident Smile
-    ctx.strokeStyle = '#9F1239';
-    ctx.lineWidth = 4;
+  } else {
+    // Stylized Modern Hair
+    ctx.fillStyle = '#1E293B';
     ctx.beginPath();
-    ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
-    ctx.stroke();
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
+    ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
+    ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
+    ctx.lineTo(cx - 95, cy - 110);
+    ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
+    ctx.closePath();
     ctx.fill();
   }
+
+  // 3D Eyes
+  drawEye(ctx, cx - 40, cy - 165);
+  drawEye(ctx, cx + 40, cy - 165);
+
+  // Glasses frames if professional
+  if (config.characterSheet?.specs?.includes('cermin mata') || !isFemale) {
+    ctx.strokeStyle = '#0F172A';
+    ctx.lineWidth = 3.5;
+    ctx.strokeRect(cx - 62, cy - 185, 45, 38);
+    ctx.strokeRect(cx + 17, cy - 185, 45, 38);
+    ctx.beginPath();
+    ctx.moveTo(cx - 17, cy - 165);
+    ctx.lineTo(cx + 17, cy - 165);
+    ctx.stroke();
+  }
+
+  // Warm Confident Smile
+  ctx.strokeStyle = '#9F1239';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.stroke();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
+  ctx.fill();
 
   // Dynamic Gestures (Smart Laser Pointer / Explanatory Hand)
   ctx.strokeStyle = shirtGrad;
