@@ -889,8 +889,8 @@ function drawMCQQuizLayout(
 }
 
 /**
- * Draws high-fidelity 3D Presenter Avatar customized to the user's config.
- * Intelligently isolates and renders the uploaded character sheet or draws an executive 3D avatar.
+ * Draws high-fidelity 3D Presenter Avatar in dynamic teaching poses per slide.
+ * Supports reference face extraction from character sheet and dynamic posing with props (laser stylus, tablet, quiz clipboard).
  */
 async function draw3DPresenterAvatar(
   ctx: CanvasRenderingContext2D,
@@ -906,159 +906,52 @@ async function draw3DPresenterAvatar(
 
   ctx.save();
 
-  // 1. If user uploaded a Character Sheet image, extract and render the real character cleanly
-  if (config.characterSheet?.imageUrl) {
-    try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = config.characterSheet.imageUrl;
-      await new Promise<void>((resolve) => {
-        if (img.complete && img.naturalWidth > 0) {
-          resolve();
-        } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }
-      });
-
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        // Multi-view sheet detection (3-pose turnaround sheets have width > height * 1.15)
-        const isMultiViewSheet = img.naturalWidth > img.naturalHeight * 1.15;
-        
-        let cropX = 0;
-        let cropY = 0;
-        let cropW = img.naturalWidth;
-        let cropH = img.naturalHeight;
-
-        if (isMultiViewSheet) {
-          // Extract the primary front-facing pose (center portion of turnaround sheet)
-          cropX = Math.round(img.naturalWidth * 0.28);
-          cropW = Math.round(img.naturalWidth * 0.44);
-          cropY = 0;
-          cropH = img.naturalHeight;
-        }
-
-        // Process transparency / chroma isolation on offscreen canvas
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = cropW;
-        offCanvas.height = cropH;
-        const offCtx = offCanvas.getContext('2d');
-
-        if (offCtx) {
-          offCtx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-          const imgData = offCtx.getImageData(0, 0, cropW, cropH);
-          const data = imgData.data;
-
-          // Sample corner color to detect white / solid light background
-          const cornerR = data[0];
-          const cornerG = data[1];
-          const cornerB = data[2];
-          const isLightBg = cornerR > 215 && cornerG > 215 && cornerB > 215;
-
-          if (isLightBg) {
-            // Smoothly remove solid light background with soft anti-aliased threshold
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i + 1];
-              const b = data[i + 2];
-              const brightness = (r + g + b) / 3;
-
-              if (brightness > 240) {
-                data[i + 3] = 0; // Fully transparent
-              } else if (brightness > 218) {
-                // Feather edge
-                const alphaFactor = (240 - brightness) / 22;
-                data[i + 3] = Math.round(data[i + 3] * alphaFactor);
-              }
-            }
-            offCtx.putImageData(imgData, 0, 0);
-          }
-
-          // Calculate standing scale & positioning
-          const targetHeight = Math.min(760, 1080 * 0.72);
-          const aspect = cropW / cropH;
-          const targetWidth = Math.min(460, targetHeight * aspect);
-          const drawX = cx - targetWidth / 2;
-          const drawY = 1045 - targetHeight;
-
-          // Ambient floor contact shadow
-          const shadowGrad = ctx.createRadialGradient(cx, 1055, 20, cx, 1055, targetWidth * 0.65);
-          shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
-          shadowGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
-          shadowGrad.addColorStop(1, 'transparent');
-          ctx.fillStyle = shadowGrad;
-          ctx.beginPath();
-          ctx.ellipse(cx, 1055, targetWidth * 0.55, 25, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Ambient studio rim back-glow behind character
-          const backGlow = ctx.createRadialGradient(cx, drawY + targetHeight * 0.45, 40, cx, drawY + targetHeight * 0.45, 340);
-          backGlow.addColorStop(0, `${primaryAccent}2A`);
-          backGlow.addColorStop(0.6, `${secondaryAccent}10`);
-          backGlow.addColorStop(1, 'transparent');
-          ctx.fillStyle = backGlow;
-          ctx.fillRect(cx - 350, drawY - 50, 700, targetHeight + 100);
-
-          // Draw the high-resolution isolated presenter
-          ctx.drawImage(offCanvas, drawX, drawY, targetWidth, targetHeight);
-
-          // Executive Floating Acrylic Nametag Badge
-          if (config.useNametag) {
-            const nametagX = isLeft ? cx - 80 : cx - 120;
-            const nametagY = Math.min(1000, drawY + targetHeight * 0.78);
-
-            ctx.font = '900 20px "Plus Jakarta Sans", monospace';
-            const textWidth = ctx.measureText(charName).width;
-            const tagW = textWidth + 44;
-            const tagH = 42;
-
-            // Glassmorphic badge background
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-            roundRect(ctx, nametagX, nametagY, tagW, tagH, 10);
-            ctx.fill();
-
-            // Accent border
-            ctx.strokeStyle = primaryAccent;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Speaker icon dot
-            ctx.fillStyle = '#10B981';
-            ctx.beginPath();
-            ctx.arc(nametagX + 20, nametagY + tagH / 2, 5, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Text
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(charName, nametagX + 34, nametagY + 28);
-          }
-
-          ctx.restore();
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Could not process characterSheet image, using procedural avatar:', e);
-    }
+  // Determine dynamic teaching pose archetype for this slide
+  const slideNum = slide.slideNumber;
+  const isMcq = slide.isMcq;
+  let pose = 'POINTING_STYLUS';
+  if (isMcq) {
+    pose = 'QUIZ_HOST';
+  } else if (slideNum === 1 || slideNum % 7 === 1) {
+    pose = 'WELCOMING_KEYNOTE';
+  } else if (slideNum % 7 === 2) {
+    pose = 'POINTING_STYLUS';
+  } else if (slideNum % 7 === 3) {
+    pose = 'HOLDING_TABLET';
+  } else if (slideNum % 7 === 4) {
+    pose = 'UPWARD_METRIC';
+  } else if (slideNum % 7 === 5) {
+    pose = 'COMPARISON_GESTURE';
+  } else if (slideNum % 7 === 6) {
+    pose = 'STEP_BY_STEP';
+  } else {
+    pose = 'THOUGHTFUL_EXPLANATION';
   }
 
-  // 2. Procedural High-Craft Executive Presenter (When no image is uploaded)
-  // Ambient Floor Contact Shadow
+  // 1. Ambient Floor Contact Shadow
   const shadowGrad = ctx.createRadialGradient(cx, 1060, 20, cx, 1060, 260);
-  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
-  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.18)');
   shadowGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = shadowGrad;
   ctx.beginPath();
-  ctx.ellipse(cx, 1055, 220, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, 1055, 230, 32, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Torso / Attire (Tailored Executive Blazer in Brand Palette)
+  // 2. Studio Backlight / Rim Glow
+  const backGlow = ctx.createRadialGradient(cx, cy + 50, 40, cx, cy + 50, 380);
+  backGlow.addColorStop(0, `${primaryAccent}2E`);
+  backGlow.addColorStop(0.6, `${secondaryAccent}12`);
+  backGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = backGlow;
+  ctx.fillRect(cx - 360, cy - 300, 720, 900);
+
+  // 3. Attire & Gradients
   const isFemale = config.characterSheet?.gender === 'Wanita' || slide.ethnicity === 'Melayu berhijab';
-  const shirtGrad = ctx.createLinearGradient(cx - 160, cy - 50, cx + 160, cy + 350);
-  shirtGrad.addColorStop(0, '#1E3A8A');
-  shirtGrad.addColorStop(0.5, '#1E40AF');
-  shirtGrad.addColorStop(1, '#0F172A');
+  const suitGrad = ctx.createLinearGradient(cx - 160, cy - 50, cx + 160, cy + 380);
+  suitGrad.addColorStop(0, '#1E3A8A');
+  suitGrad.addColorStop(0.45, '#1E40AF');
+  suitGrad.addColorStop(1, '#0B132B');
 
   const skinGrad = ctx.createLinearGradient(cx - 50, cy - 120, cx + 50, cy - 30);
   if (slide.ethnicity === 'Cina') {
@@ -1072,172 +965,364 @@ async function draw3DPresenterAvatar(
     skinGrad.addColorStop(1, '#FDBA74');
   }
 
-  // Executive Suit Body
-  ctx.fillStyle = shirtGrad;
+  // 4. Executive Suit Torso (Thigh-up)
+  ctx.fillStyle = suitGrad;
   ctx.beginPath();
-  ctx.moveTo(cx - 150, cy - 20);
-  ctx.quadraticCurveTo(cx - 165, cy + 200, cx - 175, cy + 420);
-  ctx.lineTo(cx + 175, cy + 420);
-  ctx.quadraticCurveTo(cx + 165, cy + 200, cx + 150, cy - 20);
+  ctx.moveTo(cx - 155, cy - 10);
+  ctx.quadraticCurveTo(cx - 170, cy + 200, cx - 180, cy + 420);
+  ctx.lineTo(cx + 180, cy + 420);
+  ctx.quadraticCurveTo(cx + 170, cy + 200, cx + 155, cy - 10);
   ctx.closePath();
   ctx.fill();
 
-  // Dark Pants (Thigh-up)
+  // Dark Trousers / Skirt
   ctx.fillStyle = '#0F172A';
-  ctx.fillRect(cx - 170, cy + 420, 340, 180);
+  ctx.fillRect(cx - 175, cy + 420, 350, 190);
 
-  // Blazer Lapels & White Shirt Collar
+  // White Shirt Collar & Lapels
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
-  ctx.moveTo(cx - 40, cy - 35);
-  ctx.lineTo(cx, cy + 50);
-  ctx.lineTo(cx + 40, cy - 35);
+  ctx.moveTo(cx - 42, cy - 25);
+  ctx.lineTo(cx, cy + 60);
+  ctx.lineTo(cx + 42, cy - 25);
   ctx.closePath();
   ctx.fill();
 
-  // Tie or Silk Scarf
+  // Corporate Tie / Silk Scarf
   ctx.fillStyle = primaryAccent;
   ctx.beginPath();
-  ctx.moveTo(cx - 16, cy - 15);
-  ctx.lineTo(cx + 16, cy - 15);
-  ctx.lineTo(cx + 22, cy + 120);
-  ctx.lineTo(cx, cy + 150);
-  ctx.lineTo(cx - 22, cy + 120);
+  ctx.moveTo(cx - 18, cy - 10);
+  ctx.lineTo(cx + 18, cy - 10);
+  ctx.lineTo(cx + 24, cy + 130);
+  ctx.lineTo(cx, cy + 160);
+  ctx.lineTo(cx - 24, cy + 130);
   ctx.closePath();
   ctx.fill();
 
-  // Lapel folds
+  // Lapel Folds
   ctx.fillStyle = '#172554';
   ctx.beginPath();
-  ctx.moveTo(cx - 110, cy - 20);
-  ctx.lineTo(cx - 30, cy + 160);
-  ctx.lineTo(cx, cy + 180);
-  ctx.lineTo(cx + 30, cy + 160);
-  ctx.lineTo(cx + 110, cy - 20);
-  ctx.lineTo(cx + 70, cy - 20);
-  ctx.lineTo(cx, cy + 110);
-  ctx.lineTo(cx - 70, cy - 20);
+  ctx.moveTo(cx - 115, cy - 10);
+  ctx.lineTo(cx - 32, cy + 170);
+  ctx.lineTo(cx, cy + 190);
+  ctx.lineTo(cx + 32, cy + 170);
+  ctx.lineTo(cx + 115, cy - 10);
+  ctx.lineTo(cx + 72, cy - 10);
+  ctx.lineTo(cx, cy + 120);
+  ctx.lineTo(cx - 72, cy - 10);
   ctx.closePath();
   ctx.fill();
 
-  // Nametag Badge on Chest
+  // 5. Executive Acrylic Nametag Badge
   if (config.useNametag) {
-    const nametagX = isLeft ? cx + 25 : cx - 145;
-    const nametagY = cy + 60;
+    const nametagX = isLeft ? cx + 20 : cx - 150;
+    const nametagY = cy + 65;
 
     ctx.font = '900 18px "Plus Jakarta Sans", monospace';
-    const tagW = ctx.measureText(charName).width + 30;
+    const tagW = ctx.measureText(charName).width + 36;
 
-    ctx.fillStyle = '#FFFFFF';
-    roundRect(ctx, nametagX, nametagY, tagW, 34, 8);
+    ctx.fillStyle = '#0F172A';
+    roundRect(ctx, nametagX, nametagY, tagW, 36, 8);
     ctx.fill();
-    ctx.strokeStyle = '#0F172A';
+
+    ctx.strokeStyle = primaryAccent;
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#0F172A';
-    ctx.fillText(charName, nametagX + 15, nametagY + 24);
-  }
-
-  // 3D Head & Face
-  ctx.fillStyle = skinGrad;
-  ctx.fillRect(cx - 45, cy - 90, 90, 70);
-
-  ctx.beginPath();
-  ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (slide.ethnicity === 'Melayu berhijab') {
-    // Elegant Corporate Hijab
-    ctx.fillStyle = primaryAccent;
+    // Active Green Dot
+    ctx.fillStyle = '#10B981';
     ctx.beginPath();
-    ctx.arc(cx, cy - 160, 120, Math.PI * 0.7, Math.PI * 2.3);
-    ctx.lineTo(cx + 90, cy + 30);
-    ctx.lineTo(cx - 90, cy + 30);
-    ctx.closePath();
+    ctx.arc(nametagX + 16, nametagY + 18, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hijab inner face frame
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(charName, nametagX + 28, nametagY + 25);
+  }
+
+  // 6. Dynamic Arms & Props per Teaching Pose
+  ctx.strokeStyle = suitGrad;
+  ctx.lineWidth = 46;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const aimDir = isLeft ? 1 : -1; // Direction pointing toward the slide center
+
+  if (pose === 'POINTING_STYLUS') {
+    // Left Arm resting on hip
+    ctx.beginPath();
+    ctx.moveTo(cx - (aimDir * 140), cy + 10);
+    ctx.lineTo(cx - (aimDir * 210), cy + 140);
+    ctx.stroke();
+
+    // Right Arm actively pointing toward slide cards
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 140), cy + 10);
+    ctx.lineTo(cx + (aimDir * 270), cy + 80);
+    ctx.stroke();
+
+    // Hand
     ctx.fillStyle = skinGrad;
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 150, 75, 95, 0, 0, Math.PI * 2);
+    ctx.arc(cx + (aimDir * 290), cy + 85, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Glowing Cyber Laser Stylus
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 300), cy + 85);
+    ctx.lineTo(cx + (aimDir * 390), cy + 20);
+    ctx.stroke();
+
+    // Glowing Stylus Tip
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(cx + (aimDir * 390), cy + 20, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Laser Beam Pointer leading toward slide center
+    ctx.strokeStyle = `${primaryAccent}88`;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 390), cy + 20);
+    ctx.lineTo(cx + (aimDir * 580), cy - 60);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else if (pose === 'HOLDING_TABLET') {
+    // Arm holding digital tablet
+    ctx.beginPath();
+    ctx.moveTo(cx - (aimDir * 140), cy + 10);
+    ctx.lineTo(cx - (aimDir * 190), cy + 160);
+    ctx.lineTo(cx - (aimDir * 80), cy + 190);
+    ctx.stroke();
+
+    // Glowing Executive Digital Tablet
+    const tabX = cx - (aimDir * 80) - (aimDir > 0 ? 0 : 130);
+    const tabY = cy + 120;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    roundRect(ctx, tabX, tabY, 130, 95, 10);
+    ctx.fill();
+    ctx.strokeStyle = primaryAccent;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Mini Chart on Tablet Screen
+    ctx.fillStyle = `${primaryAccent}44`;
+    ctx.fillRect(tabX + 15, tabY + 45, 22, 35);
+    ctx.fillRect(tabX + 45, tabY + 30, 22, 50);
+    ctx.fillRect(tabX + 75, tabY + 15, 22, 65);
+
+    // Other arm gesturing dynamically
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 140), cy + 10);
+    ctx.lineTo(cx + (aimDir * 250), cy + 120);
+    ctx.stroke();
+
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.arc(cx + (aimDir * 270), cy + 125, 30, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (pose === 'UPWARD_METRIC') {
+    // Left arm relaxed
+    ctx.beginPath();
+    ctx.moveTo(cx - (aimDir * 140), cy + 10);
+    ctx.lineTo(cx - (aimDir * 190), cy + 180);
+    ctx.stroke();
+
+    // Right arm pointing UPWARD to top metric charts
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 140), cy + 10);
+    ctx.lineTo(cx + (aimDir * 230), cy - 90);
+    ctx.stroke();
+
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.arc(cx + (aimDir * 245), cy - 110, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sparkle / Star highlight at finger tip
+    drawFloatingAccentBadge(ctx, cx + (aimDir * 255) - 30, cy - 160, primaryAccent, secondaryAccent, slideNum);
+  } else if (pose === 'QUIZ_HOST') {
+    // Left arm holding Question Clipboard Card
+    ctx.beginPath();
+    ctx.moveTo(cx - (aimDir * 140), cy + 10);
+    ctx.lineTo(cx - (aimDir * 190), cy + 150);
+    ctx.lineTo(cx - (aimDir * 90), cy + 170);
+    ctx.stroke();
+
+    // MCQ Question Clipboard Card
+    const clipX = cx - (aimDir * 90) - (aimDir > 0 ? 0 : 120);
+    const clipY = cy + 100;
+    ctx.fillStyle = '#0F172A';
+    roundRect(ctx, clipX, clipY, 120, 110, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Question Mark on clipboard
+    ctx.font = '900 32px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillText('?', clipX + 48, clipY + 65);
+
+    // Right arm pointing at Question Options A, B, C, D
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 140), cy + 10);
+    ctx.lineTo(cx + (aimDir * 270), cy + 70);
+    ctx.stroke();
+
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.arc(cx + (aimDir * 290), cy + 75, 30, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (pose === 'WELCOMING_KEYNOTE' || pose === 'COMPARISON_GESTURE') {
+    // Both arms open wide welcoming keynote
+    ctx.beginPath();
+    ctx.moveTo(cx - 140, cy + 10);
+    ctx.lineTo(cx - 240, cy + 90);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx + 140, cy + 10);
+    ctx.lineTo(cx + 240, cy + 90);
+    ctx.stroke();
+
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.arc(cx - 260, cy + 95, 30, 0, Math.PI * 2);
+    ctx.arc(cx + 260, cy + 95, 30, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Stylized Modern Hair
-    ctx.fillStyle = '#1E293B';
+    // Thoughtful / Consulting Lecture Pose
     ctx.beginPath();
-    ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
-    ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
-    ctx.lineTo(cx - 95, cy - 110);
-    ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
-    ctx.closePath();
+    ctx.moveTo(cx - (aimDir * 140), cy + 10);
+    ctx.lineTo(cx - (aimDir * 200), cy + 160);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx + (aimDir * 140), cy + 10);
+    ctx.lineTo(cx + (aimDir * 190), cy + 80);
+    ctx.lineTo(cx + (aimDir * 70), cy - 70);
+    ctx.stroke();
+
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.arc(cx + (aimDir * 60), cy - 85, 28, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // 3D Eyes
-  drawEye(ctx, cx - 40, cy - 165);
-  drawEye(ctx, cx + 40, cy - 165);
+  // 7. Head & Face Rendering
+  // If characterSheet imageUrl is provided, seamlessly extract the face portrait into glowing studio frame
+  let renderedCustomFace = false;
+  if (config.characterSheet?.imageUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = config.characterSheet.imageUrl;
+      await new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) resolve();
+        else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
 
-  // Glasses frames if professional
-  if (config.characterSheet?.specs?.includes('cermin mata') || !isFemale) {
-    ctx.strokeStyle = '#0F172A';
-    ctx.lineWidth = 3.5;
-    ctx.strokeRect(cx - 62, cy - 185, 45, 38);
-    ctx.strokeRect(cx + 17, cy - 185, 45, 38);
-    ctx.beginPath();
-    ctx.moveTo(cx - 17, cy - 165);
-    ctx.lineTo(cx + 17, cy - 165);
-    ctx.stroke();
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        // Multi-view sheet detection: extract front-facing head portion
+        const isMultiView = img.naturalWidth > img.naturalHeight * 1.15;
+        const cropX = isMultiView ? Math.round(img.naturalWidth * 0.32) : Math.round(img.naturalWidth * 0.15);
+        const cropY = Math.round(img.naturalHeight * 0.02);
+        const cropW = isMultiView ? Math.round(img.naturalWidth * 0.36) : Math.round(img.naturalWidth * 0.7);
+        const cropH = Math.round(img.naturalHeight * 0.45);
+
+        // Circular portrait head placement on neck
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 160, 110, 130, 0, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, cx - 110, cy - 290, 220, 260);
+        ctx.restore();
+
+        // Glowing studio halo rim around character head
+        ctx.strokeStyle = primaryAccent;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 160, 112, 132, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        renderedCustomFace = true;
+      }
+    } catch (e) {
+      console.warn('Face crop fallback:', e);
+    }
   }
 
-  // Warm Confident Smile
-  ctx.strokeStyle = '#9F1239';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.stroke();
+  if (!renderedCustomFace) {
+    // 3D Stylized Face
+    ctx.fillStyle = skinGrad;
+    ctx.fillRect(cx - 45, cy - 90, 90, 70);
 
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
-  ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Dynamic Gestures (Smart Laser Pointer / Explanatory Hand)
-  ctx.strokeStyle = shirtGrad;
-  ctx.lineWidth = 44;
-  ctx.lineCap = 'round';
+    if (slide.ethnicity === 'Melayu berhijab') {
+      // Elegant Corporate Hijab
+      ctx.fillStyle = primaryAccent;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 160, 120, Math.PI * 0.7, Math.PI * 2.3);
+      ctx.lineTo(cx + 90, cy + 30);
+      ctx.lineTo(cx - 90, cy + 30);
+      ctx.closePath();
+      ctx.fill();
 
-  // Left arm
-  ctx.beginPath();
-  ctx.moveTo(cx - 140, cy);
-  ctx.lineTo(cx - (isLeft ? 190 : 220), cy + 130);
-  ctx.stroke();
+      // Hijab inner face frame
+      ctx.fillStyle = skinGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 150, 75, 95, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Stylized Modern Hair
+      ctx.fillStyle = '#1E293B';
+      ctx.beginPath();
+      ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
+      ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
+      ctx.lineTo(cx - 95, cy - 110);
+      ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
+      ctx.closePath();
+      ctx.fill();
+    }
 
-  // Right active pointing arm
-  ctx.beginPath();
-  ctx.moveTo(cx + 140, cy);
-  ctx.lineTo(cx + (isLeft ? 260 : 190), cy + 90);
-  ctx.stroke();
+    // 3D Eyes
+    drawEye(ctx, cx - 40, cy - 165);
+    drawEye(ctx, cx + 40, cy - 165);
 
-  // Hand with Smart Stylus Pen
-  ctx.fillStyle = skinGrad;
-  ctx.beginPath();
-  ctx.arc(cx + (isLeft ? 280 : 200), cy + 100, 32, 0, Math.PI * 2);
-  ctx.fill();
+    // Glasses frames if professional
+    if (config.characterSheet?.specs?.includes('cermin mata') || !isFemale) {
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(cx - 62, cy - 185, 45, 38);
+      ctx.strokeRect(cx + 17, cy - 185, 45, 38);
+      ctx.beginPath();
+      ctx.moveTo(cx - 17, cy - 165);
+      ctx.lineTo(cx + 17, cy - 165);
+      ctx.stroke();
+    }
 
-  // Glowing presentation stylus
-  ctx.strokeStyle = primaryAccent;
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(cx + (isLeft ? 290 : 210), cy + 100);
-  ctx.lineTo(cx + (isLeft ? 370 : 260), cy + 30);
-  ctx.stroke();
+    // Warm Confident Smile
+    ctx.strokeStyle = '#9F1239';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
 
-  // Stylus laser tip glow
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(cx + (isLeft ? 370 : 260), cy + 30, 8, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
+    ctx.fill();
+  }
 
   ctx.restore();
 }

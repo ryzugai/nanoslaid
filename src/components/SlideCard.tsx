@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SlideData, SetupConfig } from '../types';
 import { SlideVisualMockup } from './SlideVisualMockup';
 import { generateNanoBanana2Image, downloadImage } from '../utils/imageRenderer';
+import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
 import {
   Copy,
   Check,
@@ -120,6 +121,8 @@ export const SlideCard: React.FC<SlideCardProps> = ({
     setTimeout(() => setDownloadSuccess(false), 2000);
   };
 
+  const teachingPose = getPresenterTeachingPoseMalay(slide.slideNumber, slide.isMcq);
+
   return (
     <div
       id={`slide-card-${slide.slideNumber}`}
@@ -145,6 +148,11 @@ export const SlideCard: React.FC<SlideCardProps> = ({
 
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#091322] text-slate-300 border border-white/10">
               {slide.imageSize} • {slide.ethnicity}
+            </span>
+
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              {teachingPose.title}
             </span>
 
             {config.useNametag && config.nametagText && (

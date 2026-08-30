@@ -1,6 +1,7 @@
 import React from 'react';
 import { SlideData, SetupConfig, InfographicArchetype } from '../types';
 import { OFFICIAL_COLOR_SCHEMES } from '../data/colorSchemes';
+import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
 import {
   User,
   Sparkles,
@@ -17,7 +18,35 @@ import {
   X,
   Radio,
   Globe,
-  Layers
+  Layers,
+  Smartphone,
+  Scale,
+  Brain,
+  Bookmark,
+  MessageSquare,
+  Calendar,
+  Share2,
+  ShieldCheck,
+  BarChart3,
+  Presentation,
+  AlertTriangle,
+  RotateCw,
+  DollarSign,
+  Award,
+  Grid,
+  Search,
+  CheckSquare,
+  FileCheck,
+  Maximize2,
+  Leaf,
+  Flame,
+  Clock,
+  FileText,
+  AlertCircle,
+  Eye,
+  BookOpen,
+  Target,
+  Trophy
 } from 'lucide-react';
 
 interface SlideVisualMockupProps {
@@ -41,18 +70,7 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
     slide.infographicMeta?.archetype ||
     'BENTO_GRID';
 
-  // Dynamic presenter pose descriptor by slide number
-  const poseType = slide.isMcq
-    ? 'QUIZ_HOST'
-    : slide.slideNumber === 1
-    ? 'WELCOMING_KEYNOTE'
-    : slide.slideNumber % 5 === 0
-    ? 'UPWARD_METRIC_GESTURE'
-    : slide.slideNumber % 4 === 0
-    ? 'TWO_HAND_FRAMING'
-    : slide.slideNumber % 3 === 0
-    ? 'HOLDING_STYLUS'
-    : 'POINTING_OPEN_PALM';
+  const teachingPose = getPresenterTeachingPoseMalay(slide.slideNumber, slide.isMcq);
 
   return (
     <div
@@ -182,33 +200,12 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                     </span>
                   </div>
 
-                  {/* Dynamic Explanatory Gesture Indicator */}
-                  <div className="flex items-center gap-1.5">
-                    {poseType === 'POINTING_OPEN_PALM' && (
-                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30 flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-cyan-400" /> Menunjuk Poin
-                      </span>
-                    )}
-                    {poseType === 'HOLDING_STYLUS' && (
-                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-400/30 flex items-center gap-1">
-                        <Radio className="w-3 h-3 text-blue-400" /> Penunjuk Pintar
-                      </span>
-                    )}
-                    {poseType === 'UPWARD_METRIC_GESTURE' && (
-                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30 flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-emerald-400" /> Sorotan Metrik
-                      </span>
-                    )}
-                    {poseType === 'QUIZ_HOST' && (
-                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-400/30 flex items-center gap-1">
-                        <HelpCircle className="w-3 h-3 text-amber-400" /> Hos Kuiz
-                      </span>
-                    )}
-                    {poseType === 'WELCOMING_KEYNOTE' && (
-                      <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-400/30 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-purple-400" /> Ucaptama
-                      </span>
-                    )}
+                  {/* Dynamic Teaching Pose Badge */}
+                  <div className="w-full flex items-center justify-center">
+                    <span className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30 flex items-center gap-1 text-center truncate max-w-full">
+                      <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
+                      <span className="truncate">{teachingPose.title}</span>
+                    </span>
                   </div>
                 </div>
               )}
@@ -502,7 +499,7 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
         >
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-[10px] sm:text-xs">
-              SLAID {slide.slideNumber} • {slide.ethnicity} • {poseType.replace(/_/g, ' ')}
+              SLAID {slide.slideNumber} • {slide.ethnicity} • {teachingPose.title}
             </span>
           </div>
 

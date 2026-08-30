@@ -108,17 +108,17 @@ Pulangkan dalam format JSON yang sah.`;
       const enhancedPrompt = characterImage
         ? `${prompt}
 
-CRITICAL MANDATES FOR NANO BANANA 2 IMAGE GENERATION (100% CHARACTER SHEET FIDELITY):
-1. 100% IDENTICAL CHARACTER REPLICATION: The attached reference image contains the official Character Sheet for the presenter (${characterName || 'presenter'}). You MUST strictly preserve 100% of this character's exact facial structure, eye shape, hairstyle, facial hair, skin tone, attire, glasses, and visual art style from the attached reference image.
-2. DYNAMIC PRESENTATION POSE: Render this exact character from the reference image in a lively, charismatic presentation pose (holding a digital presentation stylus, pointing at the infographic points, or welcoming the audience with open arms) seamlessly standing on the slide floor in a thigh-up view.
-3. SEAMLESS COMPOSITION: Blend the character organically into the 16:9 presentation slide environment with realistic contact floor shadow and ambient studio rim lighting matching the slide color scheme. Do NOT paste a boxed frame or raw character sheet grid.
-4. LARGE LEGIBLE INFOGRAPHIC TEXT: All infographic cards, headings, and bullet points must be rendered in large, bold, crisp typography (minimum 16pt+ equivalent) with high color contrast.`
+CRITICAL INSTRUCTIONS FOR 3D AVATAR GENERATION FROM REFERENCE CHARACTER SHEET:
+1. USE REFERENCE FOR LIKENESS ONLY (DO NOT CROP OR PASTE INPUT IMAGE): The attached image provides the visual reference for the lecturer character (${characterName || 'lecturer'}) — specifically their facial identity, hairstyle, glasses, skin tone, and art style. Do NOT crop, cut out, or paste the input turnaround sheet directly into the slide.
+2. GENERATE A BRAND NEW 3D ACTION POSE: You MUST actively render the character in the specific DYNAMIC TEACHING ACTION and POSE instructed in the prompt (e.g. leaning in, pointing a glowing digital laser stylus at the card, holding an executive digital tablet, framing cards with open palms, or presenting quiz questions). The character's body, arms, hands, and facial expression must dynamically perform this exact lecture action.
+3. 3D INTEGRATED SLIDE ENVIRONMENT: The lecturer must be seamlessly standing on the slide floor in 3/4 or thigh-up perspective with photorealistic floor contact shadow and subtle studio rim lighting matching the slide palette.
+4. HIGH-CONTRAST LEGIBLE INFOGRAPHICS: Render all headings and infographic card text in large, crisp typography.`
         : `${prompt}
 
 CRITICAL MANDATES:
-1. Large legible typography across all slide cards (minimum 16pt font size equivalent).
-2. Bold modern infographic visual cards with spacious padding and high contrast.
-3. Charismatic 3D presenter seamlessly standing on the slide floor.`;
+1. DYNAMIC TEACHING AVATAR: Render the 3D lecturer in the specific dynamic lecturing pose requested in the prompt, interacting with the slide cards.
+2. Large legible typography across all slide cards (minimum 16pt font size equivalent).
+3. Bold modern infographic visual cards with spacious padding and high contrast.`;
 
       parts.push({ text: enhancedPrompt });
 
