@@ -111,7 +111,7 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
       <div className="relative z-10 w-full h-full flex flex-col justify-between">
         
         {/* Top Header Section */}
-        <div className={`w-full ${isLeft ? 'pl-[26%] pr-2' : 'pr-[26%] pl-2'} space-y-1`}>
+        <div className="w-full space-y-1">
           {/* Category Pill */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white/10 backdrop-blur-xs border border-white/20">
             {slide.isMcq ? (
@@ -142,82 +142,10 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
           </h2>
         </div>
 
-        {/* Central Workspace Area: Presenter & Dynamic Infographics */}
-        <div className="relative flex-1 flex items-center justify-between my-2 sm:my-3 gap-3">
-          
-          {/* Presenter Avatar (Thigh-up Pose on Left or Right) */}
-          <div
-            className={`w-[30%] sm:w-[28%] flex flex-col items-center justify-end z-20 shrink-0 h-full ${
-              isLeft ? 'order-1' : 'order-2'
-            }`}
-          >
-            <div className="relative flex flex-col items-center w-full max-w-[260px] h-full justify-end">
-              
-              {/* Presenter Figure / Card */}
-              {config.characterSheet?.imageUrl ? (
-                <div className="relative w-full h-[80%] max-h-[340px] flex flex-col items-center justify-end group">
-                  {/* Ambient Glow behind character */}
-                  <div
-                    className="absolute inset-0 rounded-2xl opacity-30 blur-xl pointer-events-none"
-                    style={{
-                      background: `radial-gradient(circle, ${primaryAccent} 0%, ${secondaryAccent} 60%, transparent 80%)`,
-                    }}
-                  />
-
-                  {/* Character Standing Image */}
-                  <div className="relative z-10 w-full h-full flex items-end justify-center overflow-hidden rounded-2xl">
-                    <img
-                      src={config.characterSheet.imageUrl}
-                      alt={charName}
-                      className="max-h-full w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)]"
-                    />
-                  </div>
-
-                  {/* Executive Floating Nametag Badge */}
-                  {config.useNametag && (
-                    <div className="absolute bottom-2 z-20 px-3.5 py-1.5 rounded-xl bg-slate-950/90 border border-cyan-400/50 shadow-2xl backdrop-blur-md flex items-center gap-2 max-w-[95%]">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                      <span className="text-xs sm:text-sm font-black font-mono tracking-wider text-white uppercase truncate">
-                        {charName}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="relative w-full h-[75%] max-h-[300px] rounded-2xl bg-gradient-to-b from-slate-800/90 to-slate-950/90 border border-white/15 p-4 flex flex-col items-center justify-between shadow-2xl backdrop-blur-md">
-                  <div className="w-20 sm:w-24 h-20 sm:h-24 rounded-full bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-100 border-2 border-white shadow-lg flex items-center justify-center relative overflow-hidden">
-                    <User className="w-10 sm:w-14 h-10 sm:h-14 text-slate-800" />
-                  </div>
-
-                  <div className="text-center w-full">
-                    {config.useNametag && (
-                      <div className="px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-xs font-black font-mono uppercase text-white truncate">
-                        {charName}
-                      </div>
-                    )}
-                    <span className="text-[11px] text-cyan-300 font-bold mt-1 block">
-                      {slide.ethnicity} • {slide.characterPosition}
-                    </span>
-                  </div>
-
-                  {/* Dynamic Teaching Pose Badge */}
-                  <div className="w-full flex items-center justify-center">
-                    <span className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30 flex items-center gap-1 text-center truncate max-w-full">
-                      <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
-                      <span className="truncate">{teachingPose.title}</span>
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Dynamic Content: Diverse Infographics vs MCQ Interface (Locked Minimum 20pt / 20px Font Size) */}
-          <div
-            className={`flex-1 w-full h-full flex flex-col justify-center ${
-              isLeft ? 'order-2' : 'order-1'
-            }`}
-          >
+        {/* Central Workspace Area: Dynamic Infographics */}
+        <div className="relative flex-1 flex flex-col justify-center my-2 sm:my-3 w-full">
+          {/* Dynamic Content: Diverse Infographics vs MCQ Interface */}
+          <div className="w-full">
             {slide.isMcq && slide.mcqDetails ? (
               /* MCQ Quiz Interface */
               <div className="space-y-3">

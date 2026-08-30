@@ -145,13 +145,13 @@ export async function renderSlideToCanvasDataUrl(
   ctx.fillStyle = shadowGrad;
   ctx.fillRect(presenterShadowX - 300, height - 90, 600, 80);
 
-  // 2. Main Content Layout Area
-  const contentX = isLeft ? 680 : 90;
-  const contentWidth = 1150;
+  // 2. Main Content Layout Area - Full 16:9 Widescreen Presentation Layout
+  const contentX = 110;
+  const contentWidth = 1700;
 
   // 3. Category / Slide Type Pill Badge
   ctx.save();
-  const badgeY = 90;
+  const badgeY = 88;
   const badgeText = slide.isMcq
     ? `SOALAN UJI MINDA • SLAID ${slide.slideNumber}`
     : `INFOGRAFIK STRATEGIK • BAHAGIAN ${Math.ceil(slide.slideNumber / 6)}`;
@@ -173,25 +173,25 @@ export async function renderSlideToCanvasDataUrl(
   ctx.fillText(badgeText, contentX + 18, badgeY - 3);
   ctx.restore();
 
-  // 4. Large Gradient Headline
+  // 4. Large Headline
   const titleY = 175;
   const titleText = slide.title.toUpperCase();
-  ctx.font = '900 58px "Plus Jakarta Sans", "Montserrat", sans-serif';
+  ctx.font = '900 52px "Plus Jakarta Sans", "Montserrat", sans-serif';
 
-  const titleGrad = ctx.createLinearGradient(contentX, titleY - 40, contentX + 800, titleY);
+  const titleGrad = ctx.createLinearGradient(contentX, titleY - 40, contentX + 900, titleY);
   titleGrad.addColorStop(0, primaryAccent);
   titleGrad.addColorStop(1, secondaryAccent);
   ctx.fillStyle = titleGrad;
-  wrapText(ctx, titleText, contentX, titleY, contentWidth, 68, 2);
+  wrapText(ctx, titleText, contentX, titleY, contentWidth - 260, 64, 2);
 
   // 5. Dynamic Content Area (Infographic Cards vs MCQ Quiz Interface)
   if (slide.isMcq && slide.mcqDetails) {
     drawMCQQuizLayout(
       ctx,
       contentX,
-      270,
+      265,
       contentWidth,
-      680,
+      690,
       slide,
       scheme,
       isDarkScheme,
@@ -202,9 +202,9 @@ export async function renderSlideToCanvasDataUrl(
     drawInfographicCardsLayout(
       ctx,
       contentX,
-      270,
+      265,
       contentWidth,
-      680,
+      690,
       slide,
       scheme,
       isDarkScheme,
@@ -213,15 +213,34 @@ export async function renderSlideToCanvasDataUrl(
     );
   }
 
-  // 6. Draw 3D Presenter Avatar in Thigh-Up Pose (Left or Right)
-  const presenterX = isLeft ? 280 : width - 280;
-  const presenterY = height * 0.58;
+  // 6. Presenter & Studio Info Badge (Clean metadata watermark)
+  const presenterName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
+  ctx.save();
+  ctx.font = '800 15px "Plus Jakarta Sans", monospace';
+  const tagText = `WATAK: ${presenterName} • 3D AI PROMPT`;
+  const tagW = ctx.measureText(tagText).width + 28;
+  const tagX = contentX;
+  const tagY = height - 45;
 
-  // Render high-fidelity 3D presenter avatar seamlessly standing on slide floor
-  await draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
+  ctx.fillStyle = isDarkScheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+  roundRect(ctx, tagX, tagY - 22, tagW, 30, 8);
+  ctx.fill();
+  ctx.strokeStyle = isDarkScheme ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
-  // 7. Subtle Corner Brand Accent (Positioned safely away from title)
-  const floatBadgeX = width - 110;
+  // Green Active Dot
+  ctx.fillStyle = '#10B981';
+  ctx.beginPath();
+  ctx.arc(tagX + 12, tagY - 7, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = isDarkScheme ? '#94A3B8' : '#64748B';
+  ctx.fillText(tagText, tagX + 22, tagY - 2);
+  ctx.restore();
+
+  // 7. Subtle Corner Brand Accent
+  const floatBadgeX = width - 120;
   const floatBadgeY = 60;
   drawFloatingAccentBadge(ctx, floatBadgeX, floatBadgeY, primaryAccent, secondaryAccent, slide.slideNumber);
 

@@ -1,43 +1,25 @@
 import React, { useState, useMemo } from 'react';
-import { SetupConfig, SlideData, UploadedPptData } from './types';
+import { SetupConfig, SlideData } from './types';
 import { generateCurated45Slides } from './utils/slideGenerator';
 import { OFFICIAL_COLOR_SCHEMES } from './data/colorSchemes';
 import { Header } from './components/Header';
 import { SlideCard } from './components/SlideCard';
-import { MandatorySetupModal } from './components/MandatorySetupModal';
+import { MainSetupSection } from './components/MainSetupSection';
 import { MCQQuizModal } from './components/MCQQuizModal';
 import { ExportModal } from './components/ExportModal';
 import { TeleprompterModal } from './components/TeleprompterModal';
-import { PptUploadSection } from './components/PptUploadSection';
-import { CharacterSheetSection } from './components/CharacterSheetSection';
-import { ColorSchemePicker } from './components/ColorSchemePicker';
 import {
   Search,
   SlidersHorizontal,
   Sparkles,
-  Layers,
-  HelpCircle,
-  Filter,
-  CheckCircle2,
   RefreshCw,
-  Eye,
   FileDown,
-  Info,
-  ChevronDown,
-  UploadCloud,
-  FileSpreadsheet,
   Trash2,
-  ArrowRight,
-  User,
-  Palette,
-  Globe2,
-  Tv,
-  Check,
   AlertCircle
 } from 'lucide-react';
 
 export default function App() {
-  // Clean initial configuration without hardcoded topic or text
+  // Clean initial configuration
   const [config, setConfig] = useState<SetupConfig>({
     topic: '',
     referenceText: '',
@@ -56,12 +38,15 @@ export default function App() {
     }
   });
 
-  // Empty initial state as requested by user
+  // Slide generation state
   const [slides, setSlides] = useState<SlideData[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  // Single settings panel toggle state on main page
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+
+  // Modals for Export, Quiz, Teleprompter
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [teleprompterSlide, setTeleprompterSlide] = useState<SlideData | null>(null);
@@ -85,7 +70,7 @@ export default function App() {
         const generated = generateCurated45Slides(activeConfig);
         setSlides(generated);
         setConfig(activeConfig);
-        setIsSetupModalOpen(false);
+        setShowSettingsPanel(false);
       } catch (err) {
         console.error(err);
         setGenerationError('Ralat semasa menjana slaid. Sila cuba lagi.');
@@ -101,6 +86,7 @@ export default function App() {
       return;
     }
     setSlides([]);
+    setShowSettingsPanel(false);
     setConfig({
       topic: '',
       referenceText: '',
@@ -138,31 +124,58 @@ export default function App() {
 
     let fullOutput = `========================================================================
 PENJANA PROMPT 45 SLAID & VIDEO VEO RASMI
-Topik: ${config.topic || 'Pembentangan'}
-Skim Warna: Skim #${config.colorSchemeId} (${slides[0]?.colorSchemeName || 'Corporate'})
-Bahasa: ${config.outputLanguage}
-Gaya Watak: ${config.presenterStyle}
-Nametag: ${config.useNametag ? config.nametagText.toUpperCase() : 'Tiada'}
-Jumlah Slaid: ${slides.length} Slaid Lengkap
+TOPIK: ${config.topic || (config.uploadedPpt ? config.uploadedPpt.fileName : 'Pembentangan Slaid')}
+SKIM WARNA: #${config.colorSchemeId} (${OFFICIAL_COLOR_SCHEMES.find((s) => s.id === config.colorSchemeId)?.name || 'Default'})
+WATAK PRESENTER: ${config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN'}
+BAHASA: ${config.outputLanguage || 'Bahasa Melayu Baku Malaysia'}
+JUMLAH: ${slides.length} Slaid (30 Infografik + 15 Soalan MCQ)
 ========================================================================\n\n`;
 
     slides.forEach((s) => {
-      fullOutput += `${s.fullFormattedBlock}\n\n------------------------------------------------------------------------\n\n`;
+      fullOutput += `------------------------------------------------------------------------
+SLAID ${s.slideNumber}: ${s.title.toUpperCase()}
+Kategori: ${s.isMcq ? 'Soalan Uji Minda MCQ' : 'Infografik Strategik'}
+Posisi Watak: ${s.characterPosition} (${s.imageSize}) | Etnik: ${s.ethnicity}
+------------------------------------------------------------------------
+
+[1. TEKS IMEJ PROMPT (NANO BANANA 2 / AI GENERATOR)]
+${s.promptNanoBanana2}
+
+[2. PROMPT ANIMASI VIDEO VEO 10 SAAT]
+${s.promptVeo10s}
+
+[3. PROMPT VIDEO VEO FAST 5 SAAT]
+${s.promptVeo5s}
+
+[4. SKRIP AVATAR 30 SAAT (${config.outputLanguage === 'English' ? 'ENGLISH' : 'BAHASA MELAYU'})]
+"${s.scriptAvatar30s}"
+
+`;
+      if (s.isMcq && s.mcqDetails) {
+        fullOutput += `[5. BUTIRAN SOALAN KUIZ MCQ]
+Soalan: ${s.mcqDetails.question}
+Pilihan Jawapan:
+${s.mcqDetails.options.map((o) => `  ${o.label}. ${o.text}`).join('\n')}
+Jawapan Betul: ${s.mcqDetails.correctOption}
+Penerangan Ringkas: ${s.mcqDetails.explanation}
+
+`;
+      }
     });
 
     try {
       await navigator.clipboard.writeText(fullOutput);
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2500);
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error('Failed to copy all slides:', e);
     }
   };
 
-  // Filter and search slides
+  // Filtered Slides
   const filteredSlides = useMemo(() => {
     return slides.filter((slide) => {
-      // Type filter
+      // Type filters
       if (filterType === 'infographic' && slide.isMcq) return false;
       if (filterType === 'mcq' && !slide.isMcq) return false;
       if (filterType === 'left' && slide.characterPosition !== 'KIRI') return false;
@@ -193,7 +206,7 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
       <Header
         config={config}
         slidesCount={slides.length}
-        onOpenSetup={() => setIsSetupModalOpen(true)}
+        onOpenSetup={() => setShowSettingsPanel(!showSettingsPanel)}
         onOpenExport={() => setIsExportModalOpen(true)}
         onOpenQuiz={() => setIsQuizModalOpen(true)}
         onCopyAll={handleCopyAll}
@@ -204,12 +217,12 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         
         {/* ========================================================================= */}
-        {/* VIEW 1: EMPTY STATE / UPLOAD & GENERATE HUB                                */}
+        {/* VIEW 1: EMPTY STATE / SINGLE MAIN-PAGE SETUP                              */}
         {/* ========================================================================= */}
         {slides.length === 0 ? (
           <div className="space-y-6">
             
-            {/* Hero Card */}
+            {/* Hero Banner */}
             <div className="p-8 rounded-3xl border border-white/10 bg-[#0B1729] shadow-2xl relative overflow-hidden text-center space-y-4">
               <div
                 className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
@@ -222,15 +235,15 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
 
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#06B6D4]/10 border border-[#06B6D4]/30 text-[#06B6D4] text-xs font-mono font-bold tracking-wider uppercase">
                 <Sparkles className="w-3.5 h-3.5" />
-                Penjana Prompt Slaid Dinamik • 100% Berasaskan Kandungan Anda
+                Penjana Prompt Slaid Dinamik • 1 Ketetapan Utama
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Muat Naik Slaid Persembahan Anda
+                Muat Naik Kandungan &amp; Jana Prompt Slaid
               </h2>
 
               <p className="text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                Tiada teks prompt default atau isi ciptaan rawak. Muat naik fail PowerPoint (.PPTX / .PPT) atau masukkan teks sukatan anda. Sistem akan mengekstrak setiap tajuk &amp; poin slaid secara tepat untuk menjana 30 teks prompt imej (Nano Banana 2), video animasi (Veo), dan soalan kuiz interaktif.
+                Tetapkan kandungan pembentangan, bahasa, watak avatar, dan skim warna di bawah. Sistem akan mengekstrak tajuk dan isi kandungan untuk menjana 30 teks prompt imej (Nano Banana 2), video animasi (Veo), skrip narasi 30 saat, dan soalan kuiz interaktif secara bersepadu.
               </p>
 
               {generationError && (
@@ -241,217 +254,14 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
               )}
             </div>
 
-            {/* Main Interactive Configuration Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* Left Column: PowerPoint Upload & Content Input (7 cols) */}
-              <div className="lg:col-span-7 space-y-6">
-                
-                {/* 1. PPT File Upload Box */}
-                <div className="p-6 rounded-2xl border border-white/10 bg-[#0B1729] space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-[#06B6D4]" />
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                        1. Muat Naik Fail PowerPoint (.PPTX / .PPT)
-                      </h3>
-                    </div>
-                    {config.uploadedPpt && (
-                      <span className="text-xs font-bold font-mono text-[#34D399] flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {config.uploadedPpt.slideCount} Slaid Dikesan
-                      </span>
-                    )}
-                  </div>
-
-                  <PptUploadSection
-                    uploadedPpt={config.uploadedPpt}
-                    onPptParsed={(pptData, suggestedTopic) => {
-                      setConfig((prev) => ({
-                        ...prev,
-                        uploadedPpt: pptData,
-                        topic: suggestedTopic || prev.topic || pptData.extractedSlides[0]?.title || 'Pembentangan Slaid',
-                        referenceText: pptData.fullExtractedText
-                      }));
-                      setGenerationError(null);
-                    }}
-                    onClearPpt={() => {
-                      setConfig((prev) => ({
-                        ...prev,
-                        uploadedPpt: undefined,
-                        topic: '',
-                        referenceText: ''
-                      }));
-                    }}
-                  />
-                </div>
-
-                {/* 2. Manual Topic & Content Input (Alternative or Supplement) */}
-                <div className="p-6 rounded-2xl border border-white/10 bg-[#0B1729] space-y-4">
-                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                    <Layers className="w-4 h-4 text-[#06B6D4]" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                      2. Tajuk Topik &amp; Kandungan Slaid
-                    </h3>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Tajuk Utama Pembentangan
-                    </label>
-                    <input
-                      type="text"
-                      value={config.topic}
-                      onChange={(e) => {
-                        setConfig({ ...config, topic: e.target.value });
-                        setGenerationError(null);
-                      }}
-                      placeholder="Masukkan tajuk pembentangan anda (contoh: Kajian Impak Inovasi Digital 2026)..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#091322] text-white text-sm focus:ring-2 focus:ring-[#06B6D4] focus:outline-none placeholder-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Teks Nota / Sukatan Kandungan (Pilihan jika tiada fail PPTX)
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={config.referenceText}
-                      onChange={(e) => setConfig({ ...config, referenceText: e.target.value })}
-                      placeholder="Tampal teks rujukan, garis panduan modul, atau senarai tajuk slaid di sini..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#091322] text-white text-xs font-mono focus:ring-2 focus:ring-[#06B6D4] focus:outline-none placeholder-slate-500"
-                    />
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Right Column: Character Sheet, Color Scheme & Settings (5 cols) */}
-              <div className="lg:col-span-5 space-y-6">
-                
-                {/* 3. Character Sheet Upload */}
-                <div className="p-6 rounded-2xl border border-white/10 bg-[#0B1729] space-y-4">
-                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                    <User className="w-4 h-4 text-[#06B6D4]" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                      3. Character Sheet &amp; Avatar
-                    </h3>
-                  </div>
-
-                  <CharacterSheetSection
-                    characterSheet={config.characterSheet}
-                    onCharacterSheetChange={(sheet) => setConfig({ ...config, characterSheet: sheet })}
-                  />
-
-                  {/* Nametag Setting */}
-                  <div className="pt-2 border-t border-white/5 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.useNametag}
-                        onChange={(e) => setConfig({ ...config, useNametag: e.target.checked })}
-                        className="rounded border-white/20 bg-[#091322] text-[#06B6D4] focus:ring-[#06B6D4]"
-                      />
-                      <span className="text-xs font-semibold text-slate-300">
-                        Papar Nametag pada Sut Watak
-                      </span>
-                    </label>
-
-                    {config.useNametag && (
-                      <input
-                        type="text"
-                        value={config.nametagText}
-                        onChange={(e) => setConfig({ ...config, nametagText: e.target.value.toUpperCase() })}
-                        placeholder="DR. AIMAN"
-                        className="w-full px-3 py-1.5 rounded-lg border border-white/10 bg-[#091322] text-xs font-mono text-white uppercase focus:ring-2 focus:ring-[#06B6D4] focus:outline-none"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Color Scheme Selection */}
-                <div className="p-6 rounded-2xl border border-white/10 bg-[#0B1729] space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Palette className="w-4 h-4 text-[#06B6D4]" />
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                        4. Skim Warna Slaid
-                      </h3>
-                    </div>
-                    <span className="text-xs font-mono font-bold text-slate-300">
-                      Skim #{currentScheme.id}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-[#091322] border border-white/10">
-                    <div
-                      className="w-8 h-8 rounded-lg border border-white/20 shadow-md shrink-0 flex items-center justify-center"
-                      style={{ backgroundColor: currentScheme.bgHex }}
-                    >
-                      <div className="flex gap-0.5">
-                        {currentScheme.accentHexes.slice(0, 2).map((hex, i) => (
-                          <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: hex }} />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-white truncate">{currentScheme.name}</div>
-                      <div className="text-[11px] text-slate-400 truncate">{currentScheme.description}</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsSetupModalOpen(true)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-bold border border-white/10 hover:border-[#06B6D4]/40 bg-[#0B1729] text-[#06B6D4] hover:bg-[#06B6D4]/10 transition-all shrink-0"
-                    >
-                      Pilih (30)
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* Big Launch Button */}
-            <div className="p-6 rounded-3xl border border-[#06B6D4]/30 bg-gradient-to-r from-[#06B6D4]/10 via-[#3B82F6]/10 to-[#34D399]/10 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#06B6D4] to-[#34D399] text-[#091322] flex items-center justify-center shadow-lg font-bold shrink-0">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-white">
-                    Bersedia untuk Menjana Slaid?
-                  </h4>
-                  <p className="text-xs text-slate-300">
-                    {config.uploadedPpt
-                      ? `Menjana prompt daripada ${config.uploadedPpt.slideCount} slaid fail '${config.uploadedPpt.fileName}'.`
-                      : config.topic.trim()
-                      ? `Menjana prompt daripada tajuk '${config.topic.trim()}'.`
-                      : 'Sila muat naik fail PowerPoint atau masukkan tajuk slaid di atas.'}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleGenerateSlides()}
-                disabled={isGenerating || (!config.topic.trim() && !config.uploadedPpt && !config.referenceText.trim())}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#06B6D4] to-[#34D399] text-[#091322] font-black text-sm uppercase tracking-wider shadow-xl shadow-[#06B6D4]/20 hover:opacity-95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shrink-0"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#091322]" />
-                    <span>Sedang Menjana Prompt...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Jana 30 Teks Prompt Slaid Sekarang</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Single Unified Setup Section on Main Screen */}
+            <MainSetupSection
+              config={config}
+              onChangeConfig={setConfig}
+              onGenerate={handleGenerateSlides}
+              isGenerating={isGenerating}
+              hasExistingSlides={false}
+            />
 
           </div>
         ) : (
@@ -460,6 +270,20 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
           /* ========================================================================= */
           <div className="space-y-6 animate-in fade-in duration-200">
             
+            {/* Inline Toggleable Settings Panel on Main Screen */}
+            {showSettingsPanel && (
+              <div className="animate-in fade-in slide-in-from-top-4 duration-200">
+                <MainSetupSection
+                  config={config}
+                  onChangeConfig={setConfig}
+                  onGenerate={handleGenerateSlides}
+                  isGenerating={isGenerating}
+                  hasExistingSlides={true}
+                  onClosePanel={() => setShowSettingsPanel(false)}
+                />
+              </div>
+            )}
+
             {/* Executive Overview Banner */}
             <div className="p-6 rounded-2xl border border-white/10 bg-[#0B1729] shadow-xl relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div
@@ -506,11 +330,15 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
 
                 <button
                   type="button"
-                  onClick={() => setIsSetupModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-white/10 bg-[#091322] hover:bg-white/5 text-slate-200 flex items-center gap-1.5 transition-all"
+                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                    showSettingsPanel
+                      ? 'border-[#06B6D4] bg-[#06B6D4]/20 text-[#06B6D4]'
+                      : 'border-white/10 bg-[#091322] hover:bg-white/5 text-slate-200'
+                  }`}
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 text-[#06B6D4]" />
-                  <span>Tetapan Slaid</span>
+                  <span>{showSettingsPanel ? 'Tutup Ketetapan' : 'Ubah Ketetapan'}</span>
                 </button>
 
                 <button
@@ -633,7 +461,7 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
                     slide={slide}
                     config={config}
                     onOpenTeleprompter={(s) => setTeleprompterSlide(s)}
-                    onUpdateImage={handleUpdateSlideImage}
+                    onUpdateSlideImage={handleUpdateSlideImage}
                   />
                 ))}
               </div>
@@ -643,16 +471,6 @@ Jumlah Slaid: ${slides.length} Slaid Lengkap
         )}
 
       </main>
-
-      {/* Mandatory & General Setup Modal */}
-      <MandatorySetupModal
-        isOpen={isSetupModalOpen}
-        onClose={() => setIsSetupModalOpen(false)}
-        config={config}
-        onSaveAndGenerate={(newConfig) => {
-          handleGenerateSlides(newConfig);
-        }}
-      />
 
       {/* Interactive MCQ Quiz Modal */}
       <MCQQuizModal
