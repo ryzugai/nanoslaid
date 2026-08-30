@@ -129,72 +129,69 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
           
           {/* Presenter Avatar (Thigh-up Pose on Left or Right) */}
           <div
-            className={`w-[28%] sm:w-[26%] flex flex-col items-center justify-end z-20 shrink-0 h-full ${
+            className={`w-[30%] sm:w-[28%] flex flex-col items-center justify-end z-20 shrink-0 h-full ${
               isLeft ? 'order-1' : 'order-2'
             }`}
           >
-            <div className="relative flex flex-col items-center w-full max-w-[200px]">
+            <div className="relative flex flex-col items-center w-full max-w-[240px]">
               
               {/* 3D Explanatory Avatar Figure */}
-              <div className="relative flex flex-col items-center">
+              <div className="relative flex flex-col items-center w-full">
                 {/* Visual Head / Portrait */}
                 {config.characterSheet?.imageUrl ? (
-                  <div className="w-20 sm:w-28 lg:w-32 h-20 sm:h-28 lg:h-32 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/90 bg-slate-900 relative">
+                  <div className="w-24 sm:w-32 lg:w-36 h-24 sm:h-32 lg:h-36 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-slate-900 relative z-20">
                     <img
                       src={config.characterSheet.imageUrl}
                       alt={charName}
-                      className="w-[400%] max-w-none h-[400%] object-cover"
-                      style={{
-                        transform: 'translate(-5%, -5%) scale(1.15)',
-                      }}
+                      className="w-full h-full object-cover object-top"
                     />
-                    <div className="absolute inset-0 ring-2 ring-inset ring-cyan-400/40 rounded-2xl pointer-events-none" />
+                    <div className="absolute inset-0 ring-2 ring-inset ring-cyan-400/50 rounded-full pointer-events-none" />
                   </div>
                 ) : (
-                  <div className="w-16 sm:w-22 lg:w-26 h-16 sm:h-22 lg:h-26 rounded-2xl bg-gradient-to-tr from-amber-200 to-amber-100 border-2 border-white shadow-lg flex items-center justify-center relative overflow-hidden">
-                    <User className="w-8 sm:w-12 lg:w-14 h-8 sm:h-12 lg:h-14 text-slate-800" />
+                  <div className="w-20 sm:w-28 lg:w-32 h-20 sm:h-28 lg:h-32 rounded-full bg-gradient-to-tr from-amber-300 via-amber-200 to-amber-100 border-4 border-white shadow-xl flex items-center justify-center relative overflow-hidden z-20">
+                    <User className="w-10 sm:w-16 lg:w-18 h-10 sm:h-16 lg:h-18 text-slate-800" />
                   </div>
                 )}
 
                 {/* 3D Illustrated Presenter Torso with Dynamic Hand Gestures */}
                 <div
-                  className="w-24 sm:w-36 lg:w-40 h-20 sm:h-28 lg:h-32 rounded-t-3xl shadow-xl flex flex-col items-center pt-2 relative mt-[-10px] z-10 border-t border-white/40"
+                  className="w-28 sm:w-40 lg:w-48 h-24 sm:h-32 lg:h-36 rounded-t-3xl shadow-2xl flex flex-col items-center pt-3 relative mt-[-16px] z-10 border-t-2 border-white/60"
                   style={{
-                    backgroundImage: `linear-gradient(180deg, #1E3A8A 0%, #0F172A 100%)`,
+                    backgroundImage: `linear-gradient(180deg, #1E3A8A 0%, #172554 60%, #0F172A 100%)`,
                   }}
                 >
                   {/* Chest Pocket Nametag */}
                   {config.useNametag && (
-                    <div className="mt-1 px-2 py-0.5 rounded-xs bg-white border border-slate-900 shadow-xs text-xs font-black font-mono tracking-wider text-slate-950 uppercase truncate max-w-[90%]">
+                    <div className="mt-0.5 px-3 py-1 rounded-md bg-white border-2 border-slate-900 shadow-md text-xs sm:text-sm font-black font-mono tracking-wider text-slate-950 uppercase truncate max-w-[90%]">
                       {charName}
                     </div>
                   )}
 
                   {/* Dynamic Explanatory Gesture Indicator */}
-                  <div className="mt-auto pb-2 flex items-center gap-1">
+                  <div className="mt-auto pb-2.5 flex items-center gap-1.5">
                     {poseType === 'POINTING_OPEN_PALM' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30 flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-cyan-400" /> Menunjuk Poin
+                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-cyan-500/25 text-cyan-300 font-extrabold border border-cyan-400/40 flex items-center gap-1 shadow-xs">
+                        <Zap className="w-3.5 h-3.5 text-cyan-400" /> Menunjuk Poin
                       </span>
                     )}
                     {poseType === 'HOLDING_STYLUS' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-400/30 flex items-center gap-1">
-                        <Radio className="w-3 h-3 text-blue-400" /> Penunjuk Pintar
+                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/25 text-blue-300 font-extrabold border border-blue-400/40 flex items-center gap-1 shadow-xs">
+                        <Radio className="w-3.5 h-3.5 text-blue-400" /> Penunjuk Pintar
                       </span>
                     )}
                     {poseType === 'UPWARD_METRIC_GESTURE' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30 flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-emerald-400" /> Sorotan Metrik
+                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-300 font-extrabold border border-emerald-400/40 flex items-center gap-1 shadow-xs">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Sorotan Metrik
                       </span>
                     )}
                     {poseType === 'QUIZ_HOST' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-400/30 flex items-center gap-1">
-                        <HelpCircle className="w-3 h-3 text-amber-400" /> Hos Kuiz
+                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 font-extrabold border border-amber-400/40 flex items-center gap-1 shadow-xs">
+                        <HelpCircle className="w-3.5 h-3.5 text-amber-400" /> Hos Kuiz
                       </span>
                     )}
                     {poseType === 'WELCOMING_KEYNOTE' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-400/30 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-purple-400" /> Ucaptama
+                      <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-purple-500/25 text-purple-300 font-extrabold border border-purple-400/40 flex items-center gap-1 shadow-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Ucaptama
                       </span>
                     )}
                   </div>
@@ -202,15 +199,15 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
 
               {/* Presenter Name Badge */}
-              <div className="mt-1 text-center">
-                <span className="text-xs sm:text-sm font-bold px-2.5 py-1 rounded-md shadow-xs bg-black/60 text-white backdrop-blur-xs">
-                  {charName} ({slide.characterPosition})
+              <div className="mt-1.5 text-center">
+                <span className="text-xs sm:text-sm font-extrabold px-3 py-1 rounded-lg shadow-sm bg-black/70 text-white backdrop-blur-xs border border-white/10">
+                  {charName} • {slide.characterPosition}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Dynamic Content: Diverse Infographics vs MCQ Interface (Minimum 16px Font Size) */}
+          {/* Dynamic Content: Diverse Infographics vs MCQ Interface (Locked Minimum 20pt / 20px Font Size) */}
           <div
             className={`flex-1 w-full h-full flex flex-col justify-center ${
               isLeft ? 'order-2' : 'order-1'
@@ -220,35 +217,35 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               /* MCQ Quiz Interface */
               <div className="space-y-3">
                 <div
-                  className={`p-3.5 sm:p-4 rounded-xl border shadow-lg ${
-                    isDark ? 'bg-slate-900/90 border-slate-700' : 'bg-white border-slate-200'
+                  className={`p-4 sm:p-5 rounded-2xl border shadow-xl ${
+                    isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white border-slate-200'
                   }`}
-                  style={{ borderLeft: `5px solid ${primaryAccent}` }}
+                  style={{ borderLeft: `6px solid ${primaryAccent}` }}
                 >
-                  <p className="text-base sm:text-lg font-bold leading-snug">
+                  <p className="text-lg sm:text-xl md:text-2xl font-black leading-snug">
                     {slide.mcqDetails.question}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {slide.mcqDetails.options.map((opt) => (
                     <div
                       key={opt.label}
-                      className={`p-3 rounded-xl border flex items-center gap-2.5 shadow-xs ${
+                      className={`p-3.5 sm:p-4 rounded-xl border flex items-center gap-3 shadow-md ${
                         isDark
-                          ? 'bg-slate-900/70 border-slate-800'
-                          : 'bg-white/90 border-slate-200'
+                          ? 'bg-slate-900/80 border-slate-800'
+                          : 'bg-white border-slate-200'
                       }`}
                     >
                       <span
-                        className="w-7 h-7 rounded-lg flex items-center justify-center font-mono font-black text-sm shrink-0 text-white shadow-xs"
+                        className="w-8 sm:w-9 h-8 sm:h-9 rounded-lg flex items-center justify-center font-mono font-black text-base sm:text-lg shrink-0 text-white shadow-sm"
                         style={{
                           backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
                         }}
                       >
                         {opt.label}
                       </span>
-                      <span className="text-base font-semibold leading-relaxed">
+                      <span className="text-base sm:text-lg md:text-[20px] font-bold leading-relaxed">
                         {opt.text}
                       </span>
                     </div>
@@ -257,19 +254,19 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
             ) : archetype === 'PROCESS_FLOW' && slide.infographicMeta?.steps ? (
               /* 1. PROCESS FLOW: Horizontal Step-by-Step Flowchart */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {slide.infographicMeta.steps.map((step, idx) => (
                   <div
                     key={step.step}
-                    className={`p-3.5 rounded-xl border flex flex-col justify-between shadow-md relative ${
-                      isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg relative ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span
-                          className="w-7 h-7 rounded-md flex items-center justify-center font-black text-xs text-white shadow-xs"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white shadow-xs"
                           style={{
                             backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
                           }}
@@ -277,13 +274,13 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                           0{step.step}
                         </span>
                         {idx < 3 && (
-                          <ArrowRight className="w-4 h-4 opacity-40 hidden sm:block" />
+                          <ArrowRight className="w-5 h-5 opacity-40 hidden sm:block" />
                         )}
                       </div>
-                      <h4 className="text-base font-bold leading-tight mb-1.5">
+                      <h4 className="text-lg font-black leading-tight mb-2">
                         {step.title}
                       </h4>
-                      <p className="text-base opacity-85 leading-relaxed">
+                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
                         {step.desc}
                       </p>
                     </div>
@@ -292,20 +289,20 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
             ) : archetype === 'STAT_METRIC_GAUGE' && slide.infographicMeta?.stats ? (
               /* 2. STAT METRIC GAUGE: Executive KPI Telemetry */
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 {slide.infographicMeta.stats.map((stat, idx) => (
                   <div
                     key={idx}
-                    className={`p-4 rounded-xl border flex flex-col items-center text-center justify-center shadow-md ${
-                      isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-4 sm:p-5 rounded-xl border flex flex-col items-center text-center justify-center shadow-lg ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderBottom: `4px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : '#10B981'}` }}
+                    style={{ borderBottom: `5px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : '#10B981'}` }}
                   >
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-1.5 bg-cyan-500/10 text-cyan-400">
-                      {idx === 0 ? <Gauge className="w-5 h-5" /> : idx === 1 ? <TrendingUp className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 bg-cyan-500/10 text-cyan-400">
+                      {idx === 0 ? <Gauge className="w-6 h-6" /> : idx === 1 ? <TrendingUp className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
                     </div>
                     <div
-                      className="text-2xl sm:text-3xl font-black font-mono tracking-tight"
+                      className="text-3xl sm:text-4xl font-black font-mono tracking-tight"
                       style={{
                         backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
                         WebkitBackgroundClip: 'text',
@@ -314,9 +311,9 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                     >
                       {stat.value}
                     </div>
-                    <div className="text-base font-bold mt-1">{stat.label}</div>
+                    <div className="text-lg sm:text-xl font-black mt-1.5">{stat.label}</div>
                     {stat.change && (
-                      <span className="text-sm font-semibold text-emerald-400 mt-1">
+                      <span className="text-base font-bold text-emerald-400 mt-1">
                         {stat.change}
                       </span>
                     )}
@@ -325,23 +322,23 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
             ) : archetype === 'MULTI_PILLAR' && slide.infographicMeta?.pillars ? (
               /* 3. MULTI PILLAR: Architectural Pillars */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {slide.infographicMeta.pillars.map((pillar, idx) => (
                   <div
                     key={idx}
-                    className={`p-3.5 rounded-xl border flex flex-col justify-between shadow-md ${
-                      isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
                   >
                     <div>
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-blue-500/10 text-blue-400">
-                        {idx === 0 ? <Shield className="w-4 h-4" /> : idx === 1 ? <Cpu className="w-4 h-4" /> : idx === 2 ? <Users className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5 bg-blue-500/10 text-blue-400">
+                        {idx === 0 ? <Shield className="w-5 h-5" /> : idx === 1 ? <Cpu className="w-5 h-5" /> : <Users className="w-5 h-5" />}
                       </div>
-                      <h4 className="text-base font-bold leading-tight mb-1.5">
+                      <h4 className="text-lg font-black leading-tight mb-2">
                         {pillar.title}
                       </h4>
-                      <p className="text-base opacity-85 leading-relaxed">
+                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
                         {pillar.desc}
                       </p>
                     </div>
@@ -350,21 +347,21 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
             ) : archetype === 'COMPARISON_MATRIX' && slide.infographicMeta?.comparison ? (
               /* 4. COMPARISON MATRIX: Dual-Column Contrast */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Left: Traditional */}
                 <div
-                  className={`p-4 rounded-xl border shadow-sm ${
-                    isDark ? 'bg-rose-950/20 border-rose-900/40' : 'bg-rose-50 border-rose-200'
+                  className={`p-4 sm:p-5 rounded-2xl border shadow-md ${
+                    isDark ? 'bg-rose-950/25 border-rose-900/50' : 'bg-rose-50 border-rose-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2.5 text-rose-500 font-bold text-base">
-                    <X className="w-4 h-4" />
+                  <div className="flex items-center gap-2 mb-3 text-rose-500 font-black text-lg">
+                    <X className="w-5 h-5" />
                     <span>{slide.infographicMeta.comparison.leftTitle}</span>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2.5">
                     {slide.infographicMeta.comparison.leftItems.map((item, i) => (
-                      <li key={i} className="text-base flex items-start gap-2 opacity-85 leading-relaxed">
-                        <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 mt-2" />
+                      <li key={i} className="text-base sm:text-lg md:text-[20px] flex items-start gap-2.5 opacity-90 leading-relaxed font-medium">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shrink-0 mt-2" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -373,18 +370,18 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
 
                 {/* Right: Smart Modern */}
                 <div
-                  className={`p-4 rounded-xl border shadow-sm ${
-                    isDark ? 'bg-cyan-950/20 border-cyan-800/40' : 'bg-cyan-50 border-cyan-200'
+                  className={`p-4 sm:p-5 rounded-2xl border shadow-md ${
+                    isDark ? 'bg-cyan-950/25 border-cyan-800/50' : 'bg-cyan-50 border-cyan-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2.5 text-cyan-500 font-bold text-base">
-                    <Check className="w-4 h-4" />
+                  <div className="flex items-center gap-2 mb-3 text-cyan-500 font-black text-lg">
+                    <Check className="w-5 h-5" />
                     <span>{slide.infographicMeta.comparison.rightTitle}</span>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2.5">
                     {slide.infographicMeta.comparison.rightItems.map((item, i) => (
-                      <li key={i} className="text-base flex items-start gap-2 font-medium leading-relaxed">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 mt-2" />
+                      <li key={i} className="text-base sm:text-lg md:text-[20px] flex items-start gap-2.5 font-bold leading-relaxed">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shrink-0 mt-2" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -393,55 +390,55 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
               </div>
             ) : archetype === 'RADIAL_ECOSYSTEM' && slide.infographicMeta?.nodes ? (
               /* 5. RADIAL ECOSYSTEM: Core Hub & Satellite Nodes */
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 <div
-                  className={`p-3 rounded-xl border text-center shadow-md ${
-                    isDark ? 'bg-slate-900/90 border-slate-700' : 'bg-white border-slate-200'
+                  className={`p-3.5 sm:p-4 rounded-xl border text-center shadow-lg ${
+                    isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white border-slate-200'
                   }`}
                   style={{ borderLeft: `6px solid ${primaryAccent}` }}
                 >
                   <span className="text-xs uppercase font-bold text-cyan-400">Hab Pusat</span>
-                  <h4 className="text-base sm:text-lg font-black">{slide.infographicMeta.nodes.centerNode}</h4>
+                  <h4 className="text-lg sm:text-xl font-black">{slide.infographicMeta.nodes.centerNode}</h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {slide.infographicMeta.nodes.satellites.map((sat, i) => (
                     <div
                       key={i}
-                      className={`p-3 rounded-lg border shadow-xs ${
-                        isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white/90 border-slate-200'
+                      className={`p-3.5 rounded-xl border shadow-sm ${
+                        isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white/95 border-slate-200'
                       }`}
                     >
-                      <div className="text-base font-bold text-cyan-300 truncate">{sat.title}</div>
-                      <div className="text-base opacity-85 leading-relaxed mt-0.5">{sat.desc}</div>
+                      <div className="text-base sm:text-lg font-black text-cyan-300 truncate">{sat.title}</div>
+                      <div className="text-base sm:text-lg md:text-[20px] opacity-90 leading-relaxed mt-1 font-medium">{sat.desc}</div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : archetype === 'TIMELINE_ROADMAP' && slide.infographicMeta?.phases ? (
               /* 6. TIMELINE ROADMAP: Phase Milestones */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {slide.infographicMeta.phases.map((ph, idx) => (
                   <div
                     key={idx}
-                    className={`p-3.5 rounded-xl border flex flex-col justify-between shadow-md ${
-                      isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                    className={`p-4 rounded-xl border flex flex-col justify-between shadow-lg ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                     }`}
-                    style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                    style={{ borderTop: `5px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
                   >
                     <div>
-                      <span className="text-xs font-black font-mono px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300">
+                      <span className="text-xs font-black font-mono px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-300">
                         {ph.phase}
                       </span>
-                      <h4 className="text-base font-bold mt-2 mb-1">{ph.milestone}</h4>
-                      <p className="text-base opacity-85 leading-relaxed">{ph.desc}</p>
+                      <h4 className="text-lg font-black mt-2.5 mb-1">{ph.milestone}</h4>
+                      <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">{ph.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               /* 7. BENTO GRID (Default) */
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {(slide.infographicPoints && slide.infographicPoints.length > 0
                   ? slide.infographicPoints
                   : [
@@ -454,15 +451,15 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                   .map((point, idx) => (
                     <div
                       key={idx}
-                      className={`p-3 sm:p-3.5 rounded-xl border shadow-md flex items-center gap-3 ${
-                        isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                      className={`p-3.5 sm:p-4 rounded-xl border shadow-md flex items-center gap-3.5 ${
+                        isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
                       }`}
                       style={{
-                        borderLeft: `5px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : primaryAccent}`,
+                        borderLeft: `6px solid ${idx === 0 ? primaryAccent : idx === 1 ? secondaryAccent : primaryAccent}`,
                       }}
                     >
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white shrink-0 shadow-xs"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-base text-white shrink-0 shadow-xs"
                         style={{
                           backgroundImage: `linear-gradient(135deg, ${
                             idx === 0 ? primaryAccent : secondaryAccent
@@ -473,7 +470,7 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-base font-semibold leading-relaxed">
+                        <p className="text-base sm:text-lg md:text-[20px] font-bold leading-relaxed">
                           {point}
                         </p>
                       </div>

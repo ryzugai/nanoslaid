@@ -217,74 +217,8 @@ export async function renderSlideToCanvasDataUrl(
   const presenterX = isLeft ? 280 : width - 280;
   const presenterY = height * 0.58;
 
-  if (config.characterSheet?.imageUrl) {
-    try {
-      const img = await loadImage(config.characterSheet.imageUrl);
-
-      // Detect if image is a multi-view turnaround sheet (e.g. 4-pose front, side, back, 3/4)
-      const ratio = img.width / img.height;
-      let sx = 0;
-      let sy = 0;
-      let sw = img.width;
-      let sh = img.height;
-
-      if (ratio >= 1.35) {
-        // 4-Pose Turnaround Sheet detected: Crop 1 single presenter pose
-        const singlePoseWidth = Math.floor(img.width / 4);
-        // For Left position: Crop Pose 1 (front 3/4 facing right towards content)
-        // For Right position: Crop Pose 4 (front 3/4 facing left towards content)
-        sx = isLeft ? 0 : singlePoseWidth * 3;
-        sw = singlePoseWidth;
-      } else if (ratio >= 1.15) {
-        // 3-Pose Sheet detected: Crop Pose 1 for left, Pose 3 for right
-        const singlePoseWidth = Math.floor(img.width / 3);
-        sx = isLeft ? 0 : singlePoseWidth * 2;
-        sw = singlePoseWidth;
-      }
-
-      // Automatically remove studio/white background and extract clean alpha matte
-      const transparentPoseCanvas = extractPoseWithTransparentBackground(img, sx, sy, sw, sh);
-
-      const targetHeight = 840;
-      const targetWidth = Math.round((sw / sh) * targetHeight);
-      const destX = isLeft ? 50 : width - 50 - targetWidth;
-      const destY = height - targetHeight + 10;
-
-      ctx.save();
-      // Floor Ambient Contact Shadow
-      const shadowGrad = ctx.createRadialGradient(
-        destX + targetWidth / 2,
-        height - 18,
-        10,
-        destX + targetWidth / 2,
-        height - 18,
-        targetWidth * 0.45
-      );
-      shadowGrad.addColorStop(0, 'rgba(0,0,0,0.32)');
-      shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.12)');
-      shadowGrad.addColorStop(1, 'transparent');
-
-      ctx.fillStyle = shadowGrad;
-      ctx.beginPath();
-      ctx.ellipse(destX + targetWidth / 2, height - 20, targetWidth * 0.45, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Soft Subject Rim Glow & Drop Shadow
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
-      ctx.shadowBlur = 28;
-      ctx.shadowOffsetX = isLeft ? 8 : -8;
-      ctx.shadowOffsetY = 12;
-
-      // Draw cleanly keyed transparent avatar directly onto presentation slide
-      ctx.drawImage(transparentPoseCanvas, destX, destY, targetWidth, targetHeight);
-      ctx.restore();
-    } catch (err) {
-      console.warn('Could not extract transparent character, falling back to 3D vector avatar:', err);
-      draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
-    }
-  } else {
-    draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
-  }
+  // Render high-fidelity 3D presenter avatar seamlessly standing on slide floor
+  draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
 
   // 7. Subtle Corner Brand Accent (Positioned safely away from title)
   const floatBadgeX = width - 110;
@@ -292,7 +226,7 @@ export async function renderSlideToCanvasDataUrl(
   drawFloatingAccentBadge(ctx, floatBadgeX, floatBadgeY, primaryAccent, secondaryAccent, slide.slideNumber);
 
   // 8. Crisp Slide Number in Corner
-  ctx.font = '900 36px "Plus Jakarta Sans", "Montserrat", sans-serif';
+  ctx.font = '900 42px "Plus Jakarta Sans", "Montserrat", sans-serif';
   ctx.fillStyle = isDarkScheme ? '#64748B' : '#0F172A';
   ctx.textAlign = 'right';
   ctx.fillText(`${slide.slideNumber}`, width - 60, height - 40);
@@ -322,14 +256,14 @@ function drawInfographicCardsLayout(
   if (archetype === 'PROCESS_FLOW' && slide.infographicMeta?.steps) {
     const steps = slide.infographicMeta.steps;
     const count = steps.length;
-    const gap = 16;
+    const gap = 18;
     const cardWidth = (w - (count - 1) * gap) / count;
-    const cardHeight = Math.min(h, 440);
+    const cardHeight = Math.min(h, 450);
     const startY = y + (h - cardHeight) / 2;
 
     // Draw glowing track connecting cards
     ctx.save();
-    ctx.strokeStyle = isDark ? `${primaryAccent}40` : `${primaryAccent}30`;
+    ctx.strokeStyle = isDark ? `${primaryAccent}50` : `${primaryAccent}40`;
     ctx.lineWidth = 4;
     ctx.setLineDash([8, 8]);
     ctx.beginPath();
@@ -354,7 +288,7 @@ function drawInfographicCardsLayout(
       // Top Accent Line
       const col = idx % 2 === 0 ? primaryAccent : secondaryAccent;
       ctx.fillStyle = col;
-      roundRect(ctx, cx, cy, cardWidth, 8, { tl: 18, tr: 18, br: 0, bl: 0 });
+      roundRect(ctx, cx, cy, cardWidth, 10, { tl: 18, tr: 18, br: 0, bl: 0 });
       ctx.fill();
 
       // Border outline
@@ -364,7 +298,7 @@ function drawInfographicCardsLayout(
       ctx.restore();
 
       // Step Number Badge
-      const badgeSize = 48;
+      const badgeSize = 54;
       const bx = cx + (cardWidth - badgeSize) / 2;
       const by = cy + 24;
       ctx.save();
@@ -372,29 +306,29 @@ function drawInfographicCardsLayout(
       roundRect(ctx, bx, by, badgeSize, badgeSize, 14);
       ctx.fill();
 
-      ctx.font = '900 20px "Plus Jakarta Sans", monospace';
+      ctx.font = '900 24px "Plus Jakarta Sans", monospace';
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
-      ctx.fillText(`0${step.step}`, bx + badgeSize / 2, by + 31);
+      ctx.fillText(`0${step.step}`, bx + badgeSize / 2, by + 35);
 
-      // Title
-      ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+      // Title - Locked Large
+      ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-      wrapText(ctx, step.title, cx + cardWidth / 2, cy + 110, cardWidth - 28, 26, 2);
+      wrapText(ctx, step.title, cx + cardWidth / 2, cy + 120, cardWidth - 28, 34, 2);
 
       // Divider line
-      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cx + 20, cy + 165);
-      ctx.lineTo(cx + cardWidth - 20, cy + 165);
+      ctx.moveTo(cx + 20, cy + 185);
+      ctx.lineTo(cx + cardWidth - 20, cy + 185);
       ctx.stroke();
 
-      // Description
-      ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
+      // Description - Locked minimum 26px (20pt+ equivalent)
+      ctx.font = '600 26px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = isDark ? '#CBD5E1' : '#334155';
       ctx.textAlign = 'center';
-      wrapText(ctx, step.desc, cx + cardWidth / 2, cy + 195, cardWidth - 32, 24, 6);
+      wrapText(ctx, step.desc, cx + cardWidth / 2, cy + 225, cardWidth - 32, 34, 5);
       ctx.restore();
     });
     return;
@@ -406,7 +340,7 @@ function drawInfographicCardsLayout(
     const count = stats.length;
     const gap = 24;
     const cardWidth = (w - (count - 1) * gap) / count;
-    const cardHeight = Math.min(h, 440);
+    const cardHeight = Math.min(h, 450);
     const startY = y + (h - cardHeight) / 2;
 
     stats.forEach((stat, idx) => {
@@ -428,7 +362,7 @@ function drawInfographicCardsLayout(
       topGrad.addColorStop(0, accentCol);
       topGrad.addColorStop(1, `${accentCol}66`);
       ctx.fillStyle = topGrad;
-      roundRect(ctx, cx, cy, cardWidth, 8, { tl: 22, tr: 22, br: 0, bl: 0 });
+      roundRect(ctx, cx, cy, cardWidth, 10, { tl: 22, tr: 22, br: 0, bl: 0 });
       ctx.fill();
 
       // Outer border outline
@@ -437,64 +371,51 @@ function drawInfographicCardsLayout(
       ctx.stroke();
       ctx.restore();
 
-      // Stat Icon / Indicator Ring
-      const iconCenterX = cx + cardWidth / 2;
-      const iconCenterY = cy + 65;
-      ctx.save();
-      ctx.fillStyle = `${accentCol}18`;
-      ctx.beginPath();
-      ctx.arc(iconCenterX, iconCenterY, 26, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = accentCol;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-      ctx.restore();
-
       // Large High-Impact Metric Value
       ctx.save();
-      ctx.font = '900 52px "Plus Jakarta Sans", monospace';
+      ctx.font = '900 68px "Plus Jakarta Sans", monospace';
       ctx.fillStyle = accentCol;
       ctx.textAlign = 'center';
-      ctx.fillText(stat.value, cx + cardWidth / 2, cy + 175);
+      ctx.fillText(stat.value, cx + cardWidth / 2, cy + 140);
 
       // Metric Progress Bar under number
       const barWidth = cardWidth - 80;
       const barX = cx + 40;
-      const barY = cy + 205;
-      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-      roundRect(ctx, barX, barY, barWidth, 6, 3);
+      const barY = cy + 175;
+      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+      roundRect(ctx, barX, barY, barWidth, 8, 4);
       ctx.fill();
 
       const progressFill = Math.min(barWidth, barWidth * (0.65 + (idx * 0.15)));
       ctx.fillStyle = accentCol;
-      roundRect(ctx, barX, barY, progressFill, 6, 3);
+      roundRect(ctx, barX, barY, progressFill, 8, 4);
       ctx.fill();
 
-      // Label (Properly Centered inside the card)
-      ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+      // Label - Locked 28px Bold
+      ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
       ctx.textAlign = 'center';
-      wrapText(ctx, stat.label, cx + cardWidth / 2, cy + 255, cardWidth - 40, 28, 2);
+      wrapText(ctx, stat.label, cx + cardWidth / 2, cy + 240, cardWidth - 40, 36, 2);
 
-      // Change / Benchmark Tag Pill at Bottom
+      // Change / Benchmark Tag Pill at Bottom - Locked 24px
       if (stat.change) {
         const pillW = cardWidth - 60;
-        const pillH = 38;
+        const pillH = 46;
         const pillX = cx + 30;
-        const pillY = cy + cardHeight - 65;
+        const pillY = cy + cardHeight - 75;
 
-        ctx.fillStyle = `${accentCol}15`;
-        roundRect(ctx, pillX, pillY, pillW, pillH, 10);
+        ctx.fillStyle = `${accentCol}18`;
+        roundRect(ctx, pillX, pillY, pillW, pillH, 12);
         ctx.fill();
 
         ctx.strokeStyle = `${accentCol}40`;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        ctx.font = '700 16px "Plus Jakarta Sans", sans-serif';
+        ctx.font = '800 24px "Plus Jakarta Sans", sans-serif';
         ctx.fillStyle = accentCol;
         ctx.textAlign = 'center';
-        ctx.fillText(stat.change, cx + cardWidth / 2, pillY + 24);
+        ctx.fillText(stat.change, cx + cardWidth / 2, pillY + 31);
       }
       ctx.restore();
     });
@@ -505,9 +426,9 @@ function drawInfographicCardsLayout(
   if (archetype === 'MULTI_PILLAR' && slide.infographicMeta?.pillars) {
     const pillars = slide.infographicMeta.pillars;
     const count = pillars.length;
-    const gap = 16;
+    const gap = 18;
     const cardWidth = (w - (count - 1) * gap) / count;
-    const cardHeight = Math.min(h, 440);
+    const cardHeight = Math.min(h, 450);
     const startY = y + (h - cardHeight) / 2;
 
     pillars.forEach((pillar, idx) => {
@@ -525,7 +446,7 @@ function drawInfographicCardsLayout(
 
       // Top Banner Header
       ctx.fillStyle = col;
-      roundRect(ctx, cx, cy, cardWidth, 8, { tl: 18, tr: 18, br: 0, bl: 0 });
+      roundRect(ctx, cx, cy, cardWidth, 10, { tl: 18, tr: 18, br: 0, bl: 0 });
       ctx.fill();
 
       ctx.strokeStyle = isDark ? `${col}33` : `${col}22`;
@@ -536,32 +457,32 @@ function drawInfographicCardsLayout(
       // Pillar Number Pill
       ctx.save();
       ctx.fillStyle = `${col}20`;
-      roundRect(ctx, cx + 18, cy + 24, 42, 42, 12);
+      roundRect(ctx, cx + 18, cy + 24, 48, 48, 14);
       ctx.fill();
 
-      ctx.font = '900 18px "Plus Jakarta Sans", monospace';
+      ctx.font = '900 22px "Plus Jakarta Sans", monospace';
       ctx.fillStyle = col;
       ctx.textAlign = 'center';
-      ctx.fillText(`0${idx + 1}`, cx + 39, cy + 51);
+      ctx.fillText(`0${idx + 1}`, cx + 42, cy + 55);
       ctx.textAlign = 'left';
 
-      // Title
-      ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+      // Title - Locked 28px
+      ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-      wrapText(ctx, pillar.title, cx + 18, cy + 95, cardWidth - 36, 26, 2);
+      wrapText(ctx, pillar.title, cx + 18, cy + 110, cardWidth - 36, 34, 2);
 
       // Divider
-      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cx + 18, cy + 155);
-      ctx.lineTo(cx + cardWidth - 18, cy + 155);
+      ctx.moveTo(cx + 18, cy + 180);
+      ctx.lineTo(cx + cardWidth - 18, cy + 180);
       ctx.stroke();
 
-      // Desc
-      ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
-      wrapText(ctx, pillar.desc, cx + 18, cy + 185, cardWidth - 36, 24, 6);
+      // Desc - Locked minimum 26px (20pt+ equivalent)
+      ctx.font = '600 26px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = isDark ? '#CBD5E1' : '#334155';
+      wrapText(ctx, pillar.desc, cx + 18, cy + 220, cardWidth - 36, 34, 5);
       ctx.restore();
     });
     return;
@@ -570,8 +491,8 @@ function drawInfographicCardsLayout(
   // 4. COMPARISON MATRIX (Side-by-Side Dual Card)
   if (archetype === 'COMPARISON_MATRIX' && slide.infographicMeta?.comparison) {
     const cmp = slide.infographicMeta.comparison;
-    const cardWidth = (w - 24) / 2;
-    const cardHeight = Math.min(h, 440);
+    const cardWidth = (w - 28) / 2;
+    const cardHeight = Math.min(h, 450);
     const cy = y + (h - cardHeight) / 2;
 
     // Left: Traditional / Legacy (Rose theme)
@@ -587,27 +508,27 @@ function drawInfographicCardsLayout(
 
     // Top Header Banner
     ctx.fillStyle = '#E11D48';
-    roundRect(ctx, x, cy, cardWidth, 54, { tl: 20, tr: 20, br: 0, bl: 0 });
+    roundRect(ctx, x, cy, cardWidth, 60, { tl: 20, tr: 20, br: 0, bl: 0 });
     ctx.fill();
 
-    ctx.font = '900 20px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '900 28px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(`✗  ${cmp.leftTitle.toUpperCase()}`, x + 24, cy + 34);
+    ctx.fillText(`✗  ${cmp.leftTitle.toUpperCase()}`, x + 24, cy + 40);
 
-    // Left Bullet Items
-    ctx.font = '600 18px "Plus Jakarta Sans", sans-serif';
+    // Left Bullet Items - Locked minimum 28px (20pt+ equivalent)
+    ctx.font = '700 28px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = isDark ? '#FECDD3' : '#881337';
     cmp.leftItems.forEach((it, i) => {
-      const itemY = cy + 85 + i * 90;
+      const itemY = cy + 100 + i * 105;
       ctx.fillStyle = '#E11D48';
-      ctx.fillText('•', x + 24, itemY + 20);
+      ctx.fillText('•', x + 24, itemY + 24);
       ctx.fillStyle = isDark ? '#FECDD3' : '#881337';
-      wrapText(ctx, it, x + 44, itemY + 20, cardWidth - 68, 26, 2);
+      wrapText(ctx, it, x + 50, itemY + 24, cardWidth - 75, 36, 2);
     });
     ctx.restore();
 
     // Right: Smart Transformation (Emerald theme)
-    const rx = x + cardWidth + 24;
+    const rx = x + cardWidth + 28;
     ctx.save();
     ctx.shadowColor = 'rgba(16, 185, 129, 0.15)';
     ctx.shadowBlur = 24;
@@ -620,22 +541,22 @@ function drawInfographicCardsLayout(
 
     // Top Header Banner
     ctx.fillStyle = '#059669';
-    roundRect(ctx, rx, cy, cardWidth, 54, { tl: 20, tr: 20, br: 0, bl: 0 });
+    roundRect(ctx, rx, cy, cardWidth, 60, { tl: 20, tr: 20, br: 0, bl: 0 });
     ctx.fill();
 
-    ctx.font = '900 20px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '900 28px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(`✓  ${cmp.rightTitle.toUpperCase()}`, rx + 24, cy + 34);
+    ctx.fillText(`✓  ${cmp.rightTitle.toUpperCase()}`, rx + 24, cy + 40);
 
-    // Right Bullet Items
-    ctx.font = '600 18px "Plus Jakarta Sans", sans-serif';
+    // Right Bullet Items - Locked minimum 28px (20pt+ equivalent)
+    ctx.font = '700 28px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = isDark ? '#A7F3D0' : '#064E3B';
     cmp.rightItems.forEach((it, i) => {
-      const itemY = cy + 85 + i * 90;
+      const itemY = cy + 100 + i * 105;
       ctx.fillStyle = '#10B981';
-      ctx.fillText('✓', rx + 24, itemY + 20);
+      ctx.fillText('✓', rx + 24, itemY + 24);
       ctx.fillStyle = isDark ? '#A7F3D0' : '#064E3B';
-      wrapText(ctx, it, rx + 48, itemY + 20, cardWidth - 72, 26, 2);
+      wrapText(ctx, it, rx + 56, itemY + 24, cardWidth - 80, 36, 2);
     });
     ctx.restore();
     return;
@@ -645,28 +566,28 @@ function drawInfographicCardsLayout(
   if (archetype === 'RADIAL_ECOSYSTEM' && slide.infographicMeta?.nodes) {
     const nodes = slide.infographicMeta.nodes;
     const satellites = nodes.satellites || [];
-    const cardHeight = Math.min(h, 440);
+    const cardHeight = Math.min(h, 450);
     const cy = y + (h - cardHeight) / 2;
 
     // Center Hub Card
-    const hubWidth = 360;
+    const hubWidth = 380;
     const hubX = x + (w - hubWidth) / 2;
-    const hubY = cy + (cardHeight - 160) / 2;
+    const hubY = cy + (cardHeight - 170) / 2;
 
     ctx.save();
     ctx.shadowColor = `${primaryAccent}40`;
     ctx.shadowBlur = 30;
-    const hubGrad = ctx.createLinearGradient(hubX, hubY, hubX + hubWidth, hubY + 160);
+    const hubGrad = ctx.createLinearGradient(hubX, hubY, hubX + hubWidth, hubY + 170);
     hubGrad.addColorStop(0, primaryAccent);
     hubGrad.addColorStop(1, secondaryAccent);
     ctx.fillStyle = hubGrad;
-    roundRect(ctx, hubX, hubY, hubWidth, 160, 24);
+    roundRect(ctx, hubX, hubY, hubWidth, 170, 24);
     ctx.fill();
 
-    ctx.font = '900 22px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '900 30px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    wrapText(ctx, nodes.centerNode, hubX + hubWidth / 2, hubY + 70, hubWidth - 40, 28, 2);
+    wrapText(ctx, nodes.centerNode, hubX + hubWidth / 2, hubY + 75, hubWidth - 40, 36, 2);
     ctx.restore();
 
     // 4 Satellite Cards in Corners
@@ -687,13 +608,13 @@ function drawInfographicCardsLayout(
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      ctx.font = '800 18px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 26px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-      wrapText(ctx, sat.title, sx + 18, sy + 38, satW - 36, 24, 2);
+      wrapText(ctx, sat.title, sx + 20, sy + 44, satW - 40, 32, 1);
 
-      ctx.font = '500 15px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
-      wrapText(ctx, sat.desc, sx + 18, sy + 90, satW - 36, 22, 3);
+      ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = isDark ? '#CBD5E1' : '#334155';
+      wrapText(ctx, sat.desc, sx + 20, sy + 90, satW - 40, 30, 2);
       ctx.restore();
     });
     return;
@@ -703,9 +624,9 @@ function drawInfographicCardsLayout(
   if (archetype === 'TIMELINE_ROADMAP' && slide.infographicMeta?.phases) {
     const phases = slide.infographicMeta.phases;
     const count = phases.length;
-    const gap = 16;
+    const gap = 18;
     const cardWidth = (w - (count - 1) * gap) / count;
-    const cardHeight = Math.min(h, 440);
+    const cardHeight = Math.min(h, 450);
     const startY = y + (h - cardHeight) / 2;
 
     phases.forEach((p, idx) => {
@@ -722,29 +643,29 @@ function drawInfographicCardsLayout(
 
       // Top Phase Header
       ctx.fillStyle = col;
-      roundRect(ctx, cx, cy, cardWidth, 48, { tl: 18, tr: 18, br: 0, bl: 0 });
+      roundRect(ctx, cx, cy, cardWidth, 54, { tl: 18, tr: 18, br: 0, bl: 0 });
       ctx.fill();
 
-      ctx.font = '900 18px "Plus Jakarta Sans", monospace';
+      ctx.font = '900 24px "Plus Jakarta Sans", monospace';
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
-      ctx.fillText(p.phase.toUpperCase(), cx + cardWidth / 2, cy + 30);
+      ctx.fillText(p.phase.toUpperCase(), cx + cardWidth / 2, cy + 36);
 
-      // Milestone Title
-      ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+      // Milestone Title - Locked 28px
+      ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-      wrapText(ctx, p.milestone, cx + cardWidth / 2, cy + 85, cardWidth - 28, 26, 2);
+      wrapText(ctx, p.milestone, cx + cardWidth / 2, cy + 105, cardWidth - 28, 34, 2);
 
-      // Desc
-      ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
-      wrapText(ctx, p.desc, cx + cardWidth / 2, cy + 165, cardWidth - 28, 24, 6);
+      // Desc - Locked minimum 26px (20pt+ equivalent)
+      ctx.font = '600 26px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = isDark ? '#CBD5E1' : '#334155';
+      wrapText(ctx, p.desc, cx + cardWidth / 2, cy + 190, cardWidth - 28, 34, 5);
       ctx.restore();
     });
     return;
   }
 
-  // 7. DEFAULT BENTO GRID / MULTI-CARD LAYOUT (With Smart Point Splitting & Hero Highlights)
+  // 7. DEFAULT BENTO GRID / MULTI-CARD LAYOUT (With Locked 28px-32px Font Sizes)
   let rawList = slide.infographicPoints && slide.infographicPoints.length > 0
     ? [...slide.infographicPoints]
     : [
@@ -793,7 +714,7 @@ function drawInfographicCardsLayout(
   }
 
   const cardCount = Math.min(points.length, 4);
-  const cardSpacing = cardCount >= 4 ? 14 : 18;
+  const cardSpacing = cardCount >= 4 ? 14 : 20;
   const cardHeight = Math.floor((h - (cardCount - 1) * cardSpacing) / cardCount);
 
   points.slice(0, 4).forEach((point, idx) => {
@@ -813,18 +734,18 @@ function drawInfographicCardsLayout(
 
     // Left Colored Accent Border
     ctx.fillStyle = col;
-    roundRect(ctx, x, cardY, 8, cardHeight, { tl: 18, tr: 0, br: 0, bl: 18 });
+    roundRect(ctx, x, cardY, 10, cardHeight, { tl: 18, tr: 0, br: 0, bl: 18 });
     ctx.fill();
 
     // Subtle Card Outline
-    ctx.strokeStyle = isDark ? `${col}33` : `${col}22`;
+    ctx.strokeStyle = isDark ? `${col}40` : `${col}30`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
 
     // Accent Number Pill
-    const pillSize = cardCount >= 4 ? 44 : 52;
-    const pillX = x + 20;
+    const pillSize = cardCount >= 4 ? 52 : 60;
+    const pillX = x + 24;
     const pillY = cardY + (cardHeight - pillSize) / 2;
 
     const pillGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillSize, pillY + pillSize);
@@ -833,40 +754,43 @@ function drawInfographicCardsLayout(
 
     ctx.save();
     ctx.fillStyle = pillGrad;
-    roundRect(ctx, pillX, pillY, pillSize, pillSize, 12);
+    roundRect(ctx, pillX, pillY, pillSize, pillSize, 14);
     ctx.fill();
 
     // Number Text
-    ctx.font = `900 ${cardCount >= 4 ? 18 : 22}px "Plus Jakarta Sans", monospace`;
+    ctx.font = `900 ${cardCount >= 4 ? 24 : 28}px "Plus Jakarta Sans", monospace`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText(`0${idx + 1}`, pillX + pillSize / 2, pillY + (cardCount >= 4 ? 28 : 34));
+    ctx.fillText(`0${idx + 1}`, pillX + pillSize / 2, pillY + (cardCount >= 4 ? 35 : 40));
     ctx.textAlign = 'left';
     ctx.restore();
 
-    // Parse subtopic vs description if present (e.g. "13.1 Manufacturing Costs: Detail..." or "Title: Desc")
+    // Parse subtopic vs description if present (e.g. "Title: Desc")
     const colonIdx = point.indexOf(':');
-    const textX = pillX + pillSize + 20;
-    const maxTextWidth = w - (pillSize + 64);
+    const textX = pillX + pillSize + 24;
+    const maxTextWidth = w - (pillSize + 72);
 
-    if (colonIdx > 0 && colonIdx < 50) {
+    if (colonIdx > 0 && colonIdx < 60) {
       const subTitle = point.substring(0, colonIdx).trim();
       const subDesc = point.substring(colonIdx + 1).trim();
 
       ctx.save();
-      ctx.font = `800 ${cardCount >= 4 ? 18 : 20}px "Plus Jakarta Sans", sans-serif`;
+      // Locked Title font size: 30px-34px bold
+      ctx.font = `800 ${cardCount >= 4 ? 28 : 32}px "Plus Jakarta Sans", sans-serif`;
       ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-      ctx.fillText(subTitle, textX, cardY + (cardCount >= 4 ? 28 : 34));
+      ctx.fillText(subTitle, textX, cardY + (cardCount >= 4 ? 38 : 44));
 
-      ctx.font = `500 ${cardCount >= 4 ? 14 : 16}px "Plus Jakarta Sans", sans-serif`;
-      ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
-      wrapText(ctx, subDesc, textX, cardY + (cardCount >= 4 ? 54 : 64), maxTextWidth, 22, cardCount >= 4 ? 2 : 3);
+      // Locked Body font size: 26px-28px (>= 20pt)
+      ctx.font = `600 ${cardCount >= 4 ? 24 : 28}px "Plus Jakarta Sans", sans-serif`;
+      ctx.fillStyle = isDark ? '#CBD5E1' : '#334155';
+      wrapText(ctx, subDesc, textX, cardY + (cardCount >= 4 ? 74 : 86), maxTextWidth, 34, cardCount >= 4 ? 2 : 3);
       ctx.restore();
     } else {
       ctx.save();
-      ctx.font = `700 ${cardCount >= 4 ? 18 : 20}px "Plus Jakarta Sans", sans-serif`;
+      // Locked Single point font size: 28px-30px (>= 20pt)
+      ctx.font = `700 ${cardCount >= 4 ? 26 : 30}px "Plus Jakarta Sans", sans-serif`;
       ctx.fillStyle = isDark ? '#F8FAFC' : '#0F172A';
-      wrapText(ctx, point, textX, cardY + (cardHeight > 100 ? 40 : 32), maxTextWidth, 28, cardCount >= 4 ? 2 : 3);
+      wrapText(ctx, point, textX, cardY + (cardHeight > 110 ? 50 : 42), maxTextWidth, 36, cardCount >= 4 ? 2 : 3);
       ctx.restore();
     }
   });
@@ -890,7 +814,7 @@ function drawMCQQuizLayout(
   if (!slide.mcqDetails) return;
 
   // 1. Question Container Card
-  const questionHeight = 140;
+  const questionHeight = 150;
   ctx.save();
   ctx.shadowColor = isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.08)';
   ctx.shadowBlur = 24;
@@ -908,15 +832,15 @@ function drawMCQQuizLayout(
   ctx.stroke();
   ctx.restore();
 
-  // Question Text
-  ctx.font = '700 26px "Plus Jakarta Sans", sans-serif';
+  // Question Text - Locked 34px Bold
+  ctx.font = '800 34px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
-  wrapText(ctx, slide.mcqDetails.question, x + 30, y + 55, w - 60, 36, 2);
+  wrapText(ctx, slide.mcqDetails.question, x + 30, y + 60, w - 60, 44, 2);
 
   // 2. 4 Options in 2x2 Grid or 4 Stacked Rows
-  const optStartY = y + questionHeight + 20;
-  const optGap = 16;
-  const optHeight = 90;
+  const optStartY = y + questionHeight + 24;
+  const optGap = 18;
+  const optHeight = 100;
   const colWidth = (w - optGap) / 2;
 
   slide.mcqDetails.options.forEach((opt, idx) => {
@@ -927,33 +851,33 @@ function drawMCQQuizLayout(
 
     // Option Box
     ctx.save();
-    ctx.fillStyle = isDark ? 'rgba(30, 41, 59, 0.7)' : '#FFFFFF';
+    ctx.fillStyle = isDark ? 'rgba(30, 41, 59, 0.85)' : '#FFFFFF';
     roundRect(ctx, optX, optY, colWidth, optHeight, 16);
     ctx.fill();
 
-    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     // Option Letter Pill (A, B, C, D)
-    const letterSize = 44;
-    const lx = optX + 16;
+    const letterSize = 52;
+    const lx = optX + 18;
     const ly = optY + (optHeight - letterSize) / 2;
 
     ctx.fillStyle = isDark ? '#334155' : '#E2E8F0';
-    roundRect(ctx, lx, ly, letterSize, letterSize, 10);
+    roundRect(ctx, lx, ly, letterSize, letterSize, 12);
     ctx.fill();
 
-    ctx.font = '900 20px "Plus Jakarta Sans", monospace';
+    ctx.font = '900 26px "Plus Jakarta Sans", monospace';
     ctx.fillStyle = primaryAccent;
     ctx.textAlign = 'center';
-    ctx.fillText(opt.label, lx + letterSize / 2, ly + 29);
+    ctx.fillText(opt.label, lx + letterSize / 2, ly + 36);
     ctx.textAlign = 'left';
 
-    // Option Text
-    ctx.font = '600 19px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#E2E8F0' : '#1E293B';
-    wrapText(ctx, opt.text, lx + letterSize + 16, optY + 38, colWidth - (letterSize + 45), 26, 2);
+    // Option Text - Locked 28px Bold (>= 20pt)
+    ctx.font = '700 28px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = isDark ? '#F1F5F9' : '#0F172A';
+    wrapText(ctx, opt.text, lx + letterSize + 20, optY + 44, colWidth - (letterSize + 50), 34, 2);
     ctx.restore();
   });
 }
@@ -974,117 +898,170 @@ function draw3DPresenterAvatar(
   const charName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
 
   ctx.save();
-  // Ambient Presenter Shadow
-  ctx.shadowColor = 'rgba(15, 23, 42, 0.2)';
-  ctx.shadowBlur = 35;
-  ctx.shadowOffsetX = isLeft ? 12 : -12;
-  ctx.shadowOffsetY = 16;
+  // Ambient Floor Contact Shadow
+  const shadowGrad = ctx.createRadialGradient(cx, 1060, 20, cx, 1060, 220);
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.4)');
+  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
+  shadowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = shadowGrad;
+  ctx.beginPath();
+  ctx.ellipse(cx, 1055, 200, 26, 0, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Torso / Attire (Adapts to primary accent or corporate navy)
-  const shirtGrad = ctx.createLinearGradient(cx - 150, cy - 50, cx + 150, cy + 350);
-  shirtGrad.addColorStop(0, '#1E40AF');
-  shirtGrad.addColorStop(0.7, '#1E3A8A');
+  // Torso / Attire (Tailored Executive Blazer)
+  const shirtGrad = ctx.createLinearGradient(cx - 160, cy - 50, cx + 160, cy + 350);
+  shirtGrad.addColorStop(0, '#1E3A8A');
+  shirtGrad.addColorStop(0.5, '#1E40AF');
   shirtGrad.addColorStop(1, '#0F172A');
 
   ctx.fillStyle = shirtGrad;
   ctx.beginPath();
-  ctx.moveTo(cx - 140, cy - 20);
-  ctx.lineTo(cx + 140, cy - 20);
-  ctx.lineTo(cx + 160, cy + 420);
-  ctx.lineTo(cx - 160, cy + 420);
+  ctx.moveTo(cx - 150, cy - 20);
+  ctx.lineTo(cx + 150, cy - 20);
+  ctx.lineTo(cx + 175, cy + 420);
+  ctx.lineTo(cx - 175, cy + 420);
   ctx.closePath();
   ctx.fill();
 
   // Dark Pants (Thigh-up)
   ctx.fillStyle = '#0F172A';
-  ctx.fillRect(cx - 155, cy + 420, 310, 180);
+  ctx.fillRect(cx - 170, cy + 420, 340, 180);
 
-  // Collar & Placket
+  // Blazer Lapels & White Shirt Collar
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.moveTo(cx - 40, cy - 35);
+  ctx.lineTo(cx, cy + 50);
+  ctx.lineTo(cx + 40, cy - 35);
+  ctx.closePath();
+  ctx.fill();
+
+  // Tie or Silk Scarf
+  ctx.fillStyle = primaryAccent;
+  ctx.beginPath();
+  ctx.moveTo(cx - 16, cy - 15);
+  ctx.lineTo(cx + 16, cy - 15);
+  ctx.lineTo(cx + 22, cy + 120);
+  ctx.lineTo(cx, cy + 150);
+  ctx.lineTo(cx - 22, cy + 120);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lapel folds
   ctx.fillStyle = '#172554';
   ctx.beginPath();
-  ctx.moveTo(cx - 55, cy - 35);
-  ctx.lineTo(cx, cy + 30);
-  ctx.lineTo(cx + 55, cy - 35);
-  ctx.lineTo(cx + 35, cy - 50);
-  ctx.lineTo(cx, cy - 30);
-  ctx.lineTo(cx - 35, cy - 50);
+  ctx.moveTo(cx - 110, cy - 20);
+  ctx.lineTo(cx - 30, cy + 160);
+  ctx.lineTo(cx, cy + 180);
+  ctx.lineTo(cx + 30, cy + 160);
+  ctx.lineTo(cx + 110, cy - 20);
+  ctx.lineTo(cx + 70, cy - 20);
+  ctx.lineTo(cx, cy + 110);
+  ctx.lineTo(cx - 70, cy - 20);
   ctx.closePath();
   ctx.fill();
 
   // Nametag Badge on Chest
   if (config.useNametag) {
-    const nametagX = isLeft ? cx + 15 : cx - 125;
-    const nametagY = cy + 50;
+    const nametagX = isLeft ? cx + 25 : cx - 145;
+    const nametagY = cy + 60;
 
-    ctx.font = '900 15px "Plus Jakarta Sans", monospace';
-    const tagW = ctx.measureText(charName).width + 24;
+    ctx.font = '900 18px "Plus Jakarta Sans", monospace';
+    const tagW = ctx.measureText(charName).width + 30;
 
     ctx.fillStyle = '#FFFFFF';
-    roundRect(ctx, nametagX, nametagY, tagW, 28, 6);
+    roundRect(ctx, nametagX, nametagY, tagW, 34, 8);
     ctx.fill();
     ctx.strokeStyle = '#0F172A';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#0F172A';
-    ctx.fillText(charName, nametagX + 12, nametagY + 19);
+    ctx.fillText(charName, nametagX + 15, nametagY + 24);
   }
 
   // 3D Pixar Head & Face
-  const skinGrad = ctx.createLinearGradient(cx - 40, cy - 90, cx + 40, cy - 40);
-  skinGrad.addColorStop(0, '#F5D0B5');
-  skinGrad.addColorStop(1, '#E2A988');
+  const skinGrad = ctx.createLinearGradient(cx - 50, cy - 120, cx + 50, cy - 30);
+  skinGrad.addColorStop(0, '#FED7AA');
+  skinGrad.addColorStop(1, '#FDBA74');
   ctx.fillStyle = skinGrad;
-  ctx.fillRect(cx - 38, cy - 80, 76, 60);
+  ctx.fillRect(cx - 45, cy - 90, 90, 70);
 
   ctx.beginPath();
-  ctx.ellipse(cx, cy - 150, 95, 115, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Stylized Hair
+  // Stylized Modern Hair
   ctx.fillStyle = '#1E293B';
   ctx.beginPath();
-  ctx.arc(cx, cy - 175, 100, Math.PI * 0.9, Math.PI * 2.1);
-  ctx.quadraticCurveTo(cx + 95, cy - 140, cx + 85, cy - 100);
-  ctx.lineTo(cx - 85, cy - 100);
-  ctx.quadraticCurveTo(cx - 95, cy - 140, cx - 100, cy - 175);
+  ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
+  ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
+  ctx.lineTo(cx - 95, cy - 110);
+  ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
   ctx.closePath();
   ctx.fill();
 
   // 3D Eyes
-  drawEye(ctx, cx - 36, cy - 155);
-  drawEye(ctx, cx + 36, cy - 155);
+  drawEye(ctx, cx - 40, cy - 165);
+  drawEye(ctx, cx + 40, cy - 165);
 
-  // Warm Smile
-  ctx.strokeStyle = '#831843';
+  // Glasses frames if professional
+  ctx.strokeStyle = '#0F172A';
+  ctx.lineWidth = 3.5;
+  ctx.strokeRect(cx - 62, cy - 185, 45, 38);
+  ctx.strokeRect(cx + 17, cy - 185, 45, 38);
+  ctx.beginPath();
+  ctx.moveTo(cx - 17, cy - 165);
+  ctx.lineTo(cx + 17, cy - 165);
+  ctx.stroke();
+
+  // Warm Confident Smile
+  ctx.strokeStyle = '#9F1239';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(cx, cy - 110, 32, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
   ctx.stroke();
 
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
-  ctx.arc(cx, cy - 110, 28, 0.25 * Math.PI, 0.75 * Math.PI);
+  ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
   ctx.fill();
 
-  // Open-hand explanatory gesture
+  // Dynamic Gestures (Smart Laser Pointer / Explanatory Hand)
   ctx.strokeStyle = shirtGrad;
-  ctx.lineWidth = 40;
+  ctx.lineWidth = 44;
   ctx.lineCap = 'round';
 
+  // Left arm
   ctx.beginPath();
-  ctx.moveTo(cx - 130, cy);
-  ctx.lineTo(cx - 180, cy + 120);
+  ctx.moveTo(cx - 140, cy);
+  ctx.lineTo(cx - (isLeft ? 190 : 220), cy + 130);
   ctx.stroke();
 
+  // Right active pointing arm
   ctx.beginPath();
-  ctx.moveTo(cx + 130, cy);
-  ctx.lineTo(cx + (isLeft ? 240 : 170), cy + 110);
+  ctx.moveTo(cx + 140, cy);
+  ctx.lineTo(cx + (isLeft ? 260 : 190), cy + 90);
   ctx.stroke();
 
+  // Hand with Smart Stylus Pen
   ctx.fillStyle = skinGrad;
   ctx.beginPath();
-  ctx.arc(cx + (isLeft ? 260 : 180), cy + 120, 30, 0, Math.PI * 2);
+  ctx.arc(cx + (isLeft ? 280 : 200), cy + 100, 32, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Glowing presentation stylus
+  ctx.strokeStyle = primaryAccent;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(cx + (isLeft ? 290 : 210), cy + 100);
+  ctx.lineTo(cx + (isLeft ? 370 : 260), cy + 30);
+  ctx.stroke();
+
+  // Stylus laser tip glow
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(cx + (isLeft ? 370 : 260), cy + 30, 8, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
