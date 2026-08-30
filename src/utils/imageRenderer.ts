@@ -914,68 +914,24 @@ async function draw3DPresenterAvatar(
   ctx.ellipse(cx, 1055, 220, 30, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // If user uploaded a Character Sheet image, render it directly with studio lighting & nametag
-  if (config.characterSheet?.imageUrl) {
-    try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = config.characterSheet.imageUrl;
-      await new Promise<void>((resolve) => {
-        if (img.complete && img.naturalWidth > 0) {
-          resolve();
-        } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }
-      });
-
-      if (img.naturalWidth > 0) {
-        // Draw real character portrait in presenter frame with subtle studio rim lighting
-        const targetWidth = 440;
-        const aspect = img.naturalHeight / img.naturalWidth;
-        const targetHeight = Math.min(780, targetWidth * aspect);
-        const drawX = cx - targetWidth / 2;
-        const drawY = 1040 - targetHeight;
-
-        // Subtle ambient back-glow behind character
-        const backGlow = ctx.createRadialGradient(cx, cy, 60, cx, cy, 280);
-        backGlow.addColorStop(0, `${primaryAccent}33`);
-        backGlow.addColorStop(0.7, `${secondaryAccent}11`);
-        backGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = backGlow;
-        ctx.fillRect(cx - 300, drawY, 600, targetHeight + 50);
-
-        ctx.drawImage(img, drawX, drawY, targetWidth, targetHeight);
-
-        // Nametag Badge on presenter
-        if (config.useNametag) {
-          const nametagX = isLeft ? cx - 120 : cx - 100;
-          const nametagY = drawY + Math.min(targetHeight * 0.45, 340);
-          ctx.font = '900 18px "Plus Jakarta Sans", monospace';
-          const tagW = ctx.measureText(charName).width + 30;
-          ctx.fillStyle = '#FFFFFF';
-          roundRect(ctx, nametagX, nametagY, tagW, 34, 8);
-          ctx.fill();
-          ctx.strokeStyle = '#0F172A';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.fillStyle = '#0F172A';
-          ctx.fillText(charName, nametagX + 15, nametagY + 24);
-        }
-
-        ctx.restore();
-        return;
-      }
-    } catch (e) {
-      console.warn('Failed to load characterSheet image in canvas, falling back to stylized avatar:', e);
-    }
-  }
-
-  // Torso / Attire (Tailored Executive Blazer)
+  // Torso / Attire (Tailored Executive Blazer in Brand Palette)
+  const isFemale = config.characterSheet?.gender === 'Wanita' || slide.ethnicity === 'Melayu berhijab';
   const shirtGrad = ctx.createLinearGradient(cx - 160, cy - 50, cx + 160, cy + 350);
   shirtGrad.addColorStop(0, '#1E3A8A');
   shirtGrad.addColorStop(0.5, '#1E40AF');
   shirtGrad.addColorStop(1, '#0F172A');
+
+  const skinGrad = ctx.createLinearGradient(cx - 50, cy - 120, cx + 50, cy - 30);
+  if (slide.ethnicity === 'Cina') {
+    skinGrad.addColorStop(0, '#FEF08A');
+    skinGrad.addColorStop(1, '#FDE047');
+  } else if (slide.ethnicity === 'India') {
+    skinGrad.addColorStop(0, '#B45309');
+    skinGrad.addColorStop(1, '#92400E');
+  } else {
+    skinGrad.addColorStop(0, '#FED7AA');
+    skinGrad.addColorStop(1, '#FDBA74');
+  }
 
   ctx.fillStyle = shirtGrad;
   ctx.beginPath();
@@ -1043,52 +999,113 @@ async function draw3DPresenterAvatar(
     ctx.fillText(charName, nametagX + 15, nametagY + 24);
   }
 
-  // 3D Pixar Head & Face
-  const skinGrad = ctx.createLinearGradient(cx - 50, cy - 120, cx + 50, cy - 30);
-  skinGrad.addColorStop(0, '#FED7AA');
-  skinGrad.addColorStop(1, '#FDBA74');
-  ctx.fillStyle = skinGrad;
-  ctx.fillRect(cx - 45, cy - 90, 90, 70);
+  // If user uploaded a Character Sheet image, embed as high-definition circular avatar face with studio rim glow
+  let characterImageDrawn = false;
+  if (config.characterSheet?.imageUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = config.characterSheet.imageUrl;
+      await new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
 
-  ctx.beginPath();
-  ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
-  ctx.fill();
+      if (img.naturalWidth > 0) {
+        ctx.save();
+        // Glowing rim around avatar head
+        ctx.strokeStyle = primaryAccent;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(cx, cy - 160, 115, 0, Math.PI * 2);
+        ctx.stroke();
 
-  // Stylized Modern Hair
-  ctx.fillStyle = '#1E293B';
-  ctx.beginPath();
-  ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
-  ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
-  ctx.lineTo(cx - 95, cy - 110);
-  ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
-  ctx.closePath();
-  ctx.fill();
+        // Circular clipping mask for character portrait
+        ctx.beginPath();
+        ctx.arc(cx, cy - 160, 110, 0, Math.PI * 2);
+        ctx.clip();
 
-  // 3D Eyes
-  drawEye(ctx, cx - 40, cy - 165);
-  drawEye(ctx, cx + 40, cy - 165);
+        // Draw portrait centered
+        const sSize = Math.min(img.naturalWidth, img.naturalHeight);
+        const sx = (img.naturalWidth - sSize) / 2;
+        const sy = (img.naturalHeight - sSize) * 0.15; // slightly top-aligned for face
+        ctx.drawImage(img, sx, sy, sSize, sSize, cx - 110, cy - 270, 220, 220);
+        ctx.restore();
+        characterImageDrawn = true;
+      }
+    } catch (e) {
+      console.warn('Fallback to procedural avatar head:', e);
+    }
+  }
 
-  // Glasses frames if professional
-  ctx.strokeStyle = '#0F172A';
-  ctx.lineWidth = 3.5;
-  ctx.strokeRect(cx - 62, cy - 185, 45, 38);
-  ctx.strokeRect(cx + 17, cy - 185, 45, 38);
-  ctx.beginPath();
-  ctx.moveTo(cx - 17, cy - 165);
-  ctx.lineTo(cx + 17, cy - 165);
-  ctx.stroke();
+  if (!characterImageDrawn) {
+    // 3D Head & Face
+    ctx.fillStyle = skinGrad;
+    ctx.fillRect(cx - 45, cy - 90, 90, 70);
 
-  // Warm Confident Smile
-  ctx.strokeStyle = '#9F1239';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 160, 105, 125, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
-  ctx.fill();
+    if (slide.ethnicity === 'Melayu berhijab') {
+      // Elegant Corporate Hijab
+      ctx.fillStyle = primaryAccent;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 160, 120, Math.PI * 0.7, Math.PI * 2.3);
+      ctx.lineTo(cx + 90, cy + 30);
+      ctx.lineTo(cx - 90, cy + 30);
+      ctx.closePath();
+      ctx.fill();
+
+      // Hijab inner face frame
+      ctx.fillStyle = skinGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 150, 75, 95, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Stylized Modern Hair
+      ctx.fillStyle = '#1E293B';
+      ctx.beginPath();
+      ctx.arc(cx, cy - 185, 110, Math.PI * 0.9, Math.PI * 2.1);
+      ctx.quadraticCurveTo(cx + 105, cy - 150, cx + 95, cy - 110);
+      ctx.lineTo(cx - 95, cy - 110);
+      ctx.quadraticCurveTo(cx - 105, cy - 150, cx - 110, cy - 185);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 3D Eyes
+    drawEye(ctx, cx - 40, cy - 165);
+    drawEye(ctx, cx + 40, cy - 165);
+
+    // Glasses frames if professional
+    if (config.characterSheet?.specs?.includes('cermin mata') || !isFemale) {
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(cx - 62, cy - 185, 45, 38);
+      ctx.strokeRect(cx + 17, cy - 185, 45, 38);
+      ctx.beginPath();
+      ctx.moveTo(cx - 17, cy - 165);
+      ctx.lineTo(cx + 17, cy - 165);
+      ctx.stroke();
+    }
+
+    // Warm Confident Smile
+    ctx.strokeStyle = '#9F1239';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 115, 36, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(cx, cy - 115, 32, 0.25 * Math.PI, 0.75 * Math.PI);
+    ctx.fill();
+  }
 
   // Dynamic Gestures (Smart Laser Pointer / Explanatory Hand)
   ctx.strokeStyle = shirtGrad;
