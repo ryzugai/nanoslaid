@@ -61,7 +61,12 @@ export type InfographicArchetype =
   | 'COMPARISON_MATRIX'
   | 'RADIAL_ECOSYSTEM'
   | 'TIMELINE_ROADMAP'
-  | 'BENTO_GRID';
+  | 'BENTO_GRID'
+  | 'QUADRANT_MATRIX'
+  | 'PYRAMID_HIERARCHY'
+  | 'CIRCULAR_CYCLE'
+  | 'CASE_STUDY_SHOWCASE'
+  | 'INTERACTIVE_QUIZ';
 
 export interface InfographicMetaData {
   archetype: InfographicArchetype;
@@ -76,6 +81,36 @@ export interface InfographicMetaData {
   };
   phases?: { phase: string; milestone: string; desc: string }[];
   nodes?: { centerNode: string; satellites: { title: string; desc: string }[] };
+  bento?: {
+    spotlightTitle: string;
+    spotlightDesc: string;
+    metric1: { label: string; value: string; badge?: string };
+    metric2: { label: string; value: string; badge?: string };
+    takeaway: string;
+  };
+  quadrants?: {
+    q1: { title: string; desc: string; badge: string };
+    q2: { title: string; desc: string; badge: string };
+    q3: { title: string; desc: string; badge: string };
+    q4: { title: string; desc: string; badge: string };
+  };
+  pyramid?: {
+    top: { title: string; desc: string; level: string };
+    middle: { title: string; desc: string; level: string };
+    base: { title: string; desc: string; level: string };
+  };
+  cycle?: {
+    stages: { stage: number; title: string; desc: string }[];
+  };
+  caseStudy?: {
+    challenge: string;
+    challengeDesc: string;
+    solution: string;
+    solutionDesc: string;
+    result: string;
+    resultDesc: string;
+    impactMetric: string;
+  };
 }
 
 export interface SlideData {

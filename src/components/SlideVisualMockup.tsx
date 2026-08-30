@@ -441,8 +441,218 @@ export const SlideVisualMockup: React.FC<SlideVisualMockupProps> = ({ slide, con
                   </div>
                 ))}
               </div>
+            ) : archetype === 'QUADRANT_MATRIX' && slide.infographicMeta?.quadrants ? (
+              /* 7. QUADRANT MATRIX: 2x2 Strategic Decision Matrix */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { q: slide.infographicMeta.quadrants.q1, color: '#3B82F6', num: '01' },
+                  { q: slide.infographicMeta.quadrants.q2, color: '#10B981', num: '02' },
+                  { q: slide.infographicMeta.quadrants.q3, color: '#F59E0B', num: '03' },
+                  { q: slide.infographicMeta.quadrants.q4, color: '#8B5CF6', num: '04' }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3.5 sm:p-4 rounded-xl border shadow-md flex flex-col justify-between ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
+                    style={{ borderTop: `4px solid ${item.color}` }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider text-white"
+                          style={{ backgroundColor: item.color }}
+                        >
+                          {item.q.badge}
+                        </span>
+                        <span className="font-mono font-bold text-xs opacity-50">Kuadran {item.num}</span>
+                      </div>
+                      <h4 className="text-base sm:text-lg font-black leading-tight mb-1.5">{item.q.title}</h4>
+                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{item.q.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : archetype === 'PYRAMID_HIERARCHY' && slide.infographicMeta?.pyramid ? (
+              /* 8. PYRAMID HIERARCHY: 3-Tier Layered Strategic Structure */
+              <div className="space-y-2.5 flex flex-col items-center">
+                {[
+                  { tier: slide.infographicMeta.pyramid.top, widthClass: 'w-full sm:w-3/4', color: primaryAccent },
+                  { tier: slide.infographicMeta.pyramid.middle, widthClass: 'w-full sm:w-11/12', color: secondaryAccent },
+                  { tier: slide.infographicMeta.pyramid.base, widthClass: 'w-full', color: '#10B981' }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`${item.widthClass} p-3 sm:p-4 rounded-xl border shadow-md flex items-center gap-3.5 transition-all ${
+                      isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
+                    style={{ borderLeft: `6px solid ${item.color}` }}
+                  >
+                    <div
+                      className="w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-black text-xs sm:text-sm text-white shrink-0 shadow-sm"
+                      style={{ backgroundColor: item.color }}
+                    >
+                      L{idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider opacity-70">{item.tier.level}</span>
+                      </div>
+                      <h4 className="text-base sm:text-lg font-black leading-tight">{item.tier.title}</h4>
+                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed mt-0.5">{item.tier.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : archetype === 'CIRCULAR_CYCLE' && slide.infographicMeta?.cycle ? (
+              /* 9. CIRCULAR CYCLE: 4-Stage Continuous PDCA Loop */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {slide.infographicMeta.cycle.stages.map((stg, idx) => (
+                  <div
+                    key={stg.stage}
+                    className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between shadow-md relative ${
+                      isDark ? 'bg-slate-900/85 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
+                    style={{ borderTop: `4px solid ${idx % 2 === 0 ? primaryAccent : secondaryAccent}` }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs text-white shadow-xs"
+                          style={{
+                            backgroundImage: `linear-gradient(135deg, ${primaryAccent}, ${secondaryAccent})`,
+                          }}
+                        >
+                          0{stg.stage}
+                        </span>
+                        <RotateCw className="w-4 h-4 opacity-40" />
+                      </div>
+                      <h4 className="text-base sm:text-lg font-black leading-tight mb-1.5">{stg.title}</h4>
+                      <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{stg.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : archetype === 'CASE_STUDY_SHOWCASE' && slide.infographicMeta?.caseStudy ? (
+              /* 10. CASE STUDY SHOWCASE: 3-Panel Problem -> Solution -> Impact */
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1. Cabaran */}
+                <div
+                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
+                    isDark ? 'bg-rose-950/25 border-rose-900/50' : 'bg-rose-50 border-rose-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-rose-500 font-bold text-xs uppercase mb-1.5">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Cabaran Utama</span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black text-rose-400 mb-1">{slide.infographicMeta.caseStudy.challenge}</h4>
+                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.challengeDesc}</p>
+                </div>
+
+                {/* 2. Solusi */}
+                <div
+                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
+                    isDark ? 'bg-blue-950/25 border-blue-900/50' : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-blue-400 font-bold text-xs uppercase mb-1.5">
+                    <Zap className="w-4 h-4" />
+                    <span>Solusi Dilaksana</span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black text-blue-300 mb-1">{slide.infographicMeta.caseStudy.solution}</h4>
+                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.solutionDesc}</p>
+                </div>
+
+                {/* 3. Hasil & Metrik */}
+                <div
+                  className={`p-3.5 sm:p-4 rounded-xl border shadow-md ${
+                    isDark ? 'bg-emerald-950/25 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs uppercase mb-1.5">
+                    <Award className="w-4 h-4" />
+                    <span>Hasil Impak Terbukti</span>
+                  </div>
+                  <div className="font-mono font-black text-xl sm:text-2xl text-emerald-400 mb-1">
+                    {slide.infographicMeta.caseStudy.impactMetric}
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black text-emerald-300 mb-1">{slide.infographicMeta.caseStudy.result}</h4>
+                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 leading-relaxed">{slide.infographicMeta.caseStudy.resultDesc}</p>
+                </div>
+              </div>
+            ) : archetype === 'BENTO_GRID' && slide.infographicMeta?.bento ? (
+              /* 11. BENTO GRID: Spotlight Master Card + 2 Stat Modules + Key Takeaway */
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Large Spotlight Card (2 cols) */}
+                  <div
+                    className={`sm:col-span-2 p-4 rounded-xl border shadow-md ${
+                      isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
+                    style={{ borderLeft: `6px solid ${primaryAccent}` }}
+                  >
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1.5">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Sorotan Strategik</span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-black mb-2">{slide.infographicMeta.bento.spotlightTitle}</h4>
+                    <p className="text-base sm:text-lg md:text-[20px] font-medium opacity-90 leading-relaxed">
+                      {slide.infographicMeta.bento.spotlightDesc}
+                    </p>
+                  </div>
+
+                  {/* Dual Stacked Metrics (1 col) */}
+                  <div className="space-y-3 flex flex-col justify-between">
+                    <div
+                      className={`p-3 rounded-xl border shadow-sm flex items-center justify-between ${
+                        isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold opacity-70">{slide.infographicMeta.bento.metric1.label}</div>
+                        <div className="text-xl sm:text-2xl font-black font-mono text-cyan-400">
+                          {slide.infographicMeta.bento.metric1.value}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">
+                        {slide.infographicMeta.bento.metric1.badge}
+                      </span>
+                    </div>
+
+                    <div
+                      className={`p-3 rounded-xl border shadow-sm flex items-center justify-between ${
+                        isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold opacity-70">{slide.infographicMeta.bento.metric2.label}</div>
+                        <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400">
+                          {slide.infographicMeta.bento.metric2.value}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                        {slide.infographicMeta.bento.metric2.badge}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Takeaway Banner */}
+                <div
+                  className={`p-3 rounded-xl border flex items-center gap-3 ${
+                    isDark ? 'bg-cyan-950/30 border-cyan-800/40' : 'bg-cyan-50 border-cyan-200'
+                  }`}
+                >
+                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <p className="text-sm sm:text-base font-bold text-cyan-300 leading-snug">
+                    <span className="font-black text-cyan-200">Kunci Utama: </span>
+                    {slide.infographicMeta.bento.takeaway}
+                  </p>
+                </div>
+              </div>
             ) : (
-              /* 7. BENTO GRID (Default) */
+              /* Fallback Bento Cards */
               <div className="space-y-3">
                 {(slide.infographicPoints && slide.infographicPoints.length > 0
                   ? slide.infographicPoints
