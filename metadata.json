@@ -1,0 +1,6 @@
+{
+  "name": "Penjana Prompt 45 Slaid & Video Veo",
+  "description": "Sistem pakar penjanaan 45 slaid infografik Nano Banana 2, prompt animasi Veo 10s & 5s, serta skrip avatar 30s dengan 30 skim warna rasmi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
