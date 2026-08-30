@@ -108,11 +108,11 @@ Pulangkan dalam format JSON yang sah.`;
       const enhancedPrompt = characterImage
         ? `${prompt}
 
-CRITICAL MANDATES FOR NANO BANANA 2 IMAGE GENERATION:
-1. NEW DYNAMIC PRESENTER GENERATION: Do NOT copy, crop, or paste the input reference sheet image as-is. Instead, generate a BRAND-NEW 3D render of the character (${characterName || 'presenter'}) from the reference image, preserving their exact face, hair, glasses, clothing style, and identity, but rendered in a fresh, lively, active presentation pose (pointing at infographic points, holding a presentation stylus, or welcoming the audience).
-2. SEAMLESS BACKGROUND INTEGRATION: The character must stand organically on the slide floor with NO white rectangular box, NO background frame, and NO multi-angle sheet around them. The character's background must be 100% blended into the slide's ambient lighting and studio environment.
-3. LARGE & HIGH-CONTRAST TYPOGRAPHY: All infographic points, cards, and labels on the slide must use large, crisp, bold, highly legible typography (minimum 16pt font size equivalent) with high color contrast against card backgrounds.
-4. NO SMALL OR CLUTTERED TEXT: Keep all card content bold, spacious, and eye-catching with clear numerical badges and icons.`
+CRITICAL MANDATES FOR NANO BANANA 2 IMAGE GENERATION (100% CHARACTER SHEET FIDELITY):
+1. 100% IDENTICAL CHARACTER REPLICATION: The attached reference image contains the official Character Sheet for the presenter (${characterName || 'presenter'}). You MUST strictly preserve 100% of this character's exact facial structure, eye shape, hairstyle, facial hair, skin tone, attire, glasses, and visual art style from the attached reference image.
+2. DYNAMIC PRESENTATION POSE: Render this exact character from the reference image in a lively, charismatic presentation pose (holding a digital presentation stylus, pointing at the infographic points, or welcoming the audience with open arms) seamlessly standing on the slide floor in a thigh-up view.
+3. SEAMLESS COMPOSITION: Blend the character organically into the 16:9 presentation slide environment with realistic contact floor shadow and ambient studio rim lighting matching the slide color scheme. Do NOT paste a boxed frame or raw character sheet grid.
+4. LARGE LEGIBLE INFOGRAPHIC TEXT: All infographic cards, headings, and bullet points must be rendered in large, bold, crisp typography (minimum 16pt+ equivalent) with high color contrast.`
         : `${prompt}
 
 CRITICAL MANDATES:

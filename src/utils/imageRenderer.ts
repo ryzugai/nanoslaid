@@ -218,7 +218,7 @@ export async function renderSlideToCanvasDataUrl(
   const presenterY = height * 0.58;
 
   // Render high-fidelity 3D presenter avatar seamlessly standing on slide floor
-  draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
+  await draw3DPresenterAvatar(ctx, presenterX, presenterY, config, slide, isLeft, primaryAccent, secondaryAccent);
 
   // 7. Subtle Corner Brand Accent (Positioned safely away from title)
   const floatBadgeX = width - 110;
@@ -677,7 +677,11 @@ function drawInfographicCardsLayout(
   // Intelligently flatten and split any points containing pipe (|), newlines, or numbered subtopics
   let points: string[] = [];
   for (const raw of rawList) {
-    if (!raw) continue;
+    if (!raw || !raw.trim()) continue;
+    // Filter out single tags like "Lecture 3", "Kuliah 1", etc.
+    if (/^(lecture|kuliah|bab|chapter|part|slaid)\s*\d+$/i.test(raw.trim())) {
+      continue;
+    }
     if (raw.includes('|')) {
       points.push(...raw.split('|').map(s => s.trim()).filter(Boolean));
     } else if (raw.includes('\n')) {
@@ -706,10 +710,12 @@ function drawInfographicCardsLayout(
     }
   }
 
-  if (points.length === 0) {
+  if (points.length < 2) {
+    const slideTitle = slide.title || 'Strategi Pelaksanaan';
     points = [
-      'Pelaksanaan teras strategi dan penyelarasan standard pengurusan.',
-      'Pengukuhan kawalan kualiti dan pengoptimuman proses berterusan.'
+      `Pengenalan & Kerangka Kerja: Memperincikan prinsip asas dan struktur strategik bagi ${slideTitle}.`,
+      `Pelaksanaan Berstruktur: Penyelarasan proses operasi untuk menjamin kualiti dan hasil optimum.`,
+      `Pemantauan & Kawalan: Pengukuhan tadbir urus dan kriteria penilaian jangka panjang.`
     ];
   }
 
@@ -885,7 +891,7 @@ function drawMCQQuizLayout(
 /**
  * Draws dynamic 3D Presenter Avatar customized to the user's config
  */
-function draw3DPresenterAvatar(
+async function draw3DPresenterAvatar(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
@@ -899,14 +905,71 @@ function draw3DPresenterAvatar(
 
   ctx.save();
   // Ambient Floor Contact Shadow
-  const shadowGrad = ctx.createRadialGradient(cx, 1060, 20, cx, 1060, 220);
-  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.4)');
-  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
+  const shadowGrad = ctx.createRadialGradient(cx, 1060, 20, cx, 1060, 260);
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+  shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.18)');
   shadowGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = shadowGrad;
   ctx.beginPath();
-  ctx.ellipse(cx, 1055, 200, 26, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, 1055, 220, 30, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // If user uploaded a Character Sheet image, render it directly with studio lighting & nametag
+  if (config.characterSheet?.imageUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = config.characterSheet.imageUrl;
+      await new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
+
+      if (img.naturalWidth > 0) {
+        // Draw real character portrait in presenter frame with subtle studio rim lighting
+        const targetWidth = 440;
+        const aspect = img.naturalHeight / img.naturalWidth;
+        const targetHeight = Math.min(780, targetWidth * aspect);
+        const drawX = cx - targetWidth / 2;
+        const drawY = 1040 - targetHeight;
+
+        // Subtle ambient back-glow behind character
+        const backGlow = ctx.createRadialGradient(cx, cy, 60, cx, cy, 280);
+        backGlow.addColorStop(0, `${primaryAccent}33`);
+        backGlow.addColorStop(0.7, `${secondaryAccent}11`);
+        backGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = backGlow;
+        ctx.fillRect(cx - 300, drawY, 600, targetHeight + 50);
+
+        ctx.drawImage(img, drawX, drawY, targetWidth, targetHeight);
+
+        // Nametag Badge on presenter
+        if (config.useNametag) {
+          const nametagX = isLeft ? cx - 120 : cx - 100;
+          const nametagY = drawY + Math.min(targetHeight * 0.45, 340);
+          ctx.font = '900 18px "Plus Jakarta Sans", monospace';
+          const tagW = ctx.measureText(charName).width + 30;
+          ctx.fillStyle = '#FFFFFF';
+          roundRect(ctx, nametagX, nametagY, tagW, 34, 8);
+          ctx.fill();
+          ctx.strokeStyle = '#0F172A';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = '#0F172A';
+          ctx.fillText(charName, nametagX + 15, nametagY + 24);
+        }
+
+        ctx.restore();
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to load characterSheet image in canvas, falling back to stylized avatar:', e);
+    }
+  }
 
   // Torso / Attire (Tailored Executive Blazer)
   const shirtGrad = ctx.createLinearGradient(cx - 160, cy - 50, cx + 160, cy + 350);

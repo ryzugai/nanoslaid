@@ -36,7 +36,7 @@ export const MandatorySetupModal: React.FC<MandatorySetupModalProps> = ({
   onSaveAndGenerate,
   isInitial = false,
 }) => {
-  const [topic, setTopic] = useState(config.topic || 'Transformasi AI & Keselamatan Siber Malaysia');
+  const [topic, setTopic] = useState(config.topic || '');
   const [referenceText, setReferenceText] = useState(config.referenceText || '');
   const [useNametag, setUseNametag] = useState(config.useNametag);
   const [nametagText, setNametagText] = useState(config.nametagText || 'DR. AIMAN');
@@ -61,7 +61,7 @@ export const MandatorySetupModal: React.FC<MandatorySetupModalProps> = ({
 
   const handlePptParsed = (pptData: UploadedPptData, suggestedTopic?: string) => {
     setUploadedPpt(pptData);
-    if (suggestedTopic && (!topic || topic === 'Transformasi AI & Keselamatan Siber Malaysia')) {
+    if (suggestedTopic && (!topic || topic.length === 0)) {
       setTopic(suggestedTopic);
     }
     setReferenceText(pptData.fullExtractedText);

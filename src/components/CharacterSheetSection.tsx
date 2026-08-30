@@ -160,7 +160,7 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
           <span>Character Sheet Watak Avatar Rasmi</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Muat naik helaian reka bentuk watak (Character Sheet) avatar anda. Spesifikasi rupa paras, gaya pakaian, dan ekspresi ini akan disuntik secara langsung ke dalam teks prompt <strong>Nano Banana 2</strong> dan <strong>Veo</strong> bagi menjamin konsistensi 100% pada kesemua 45 slaid.
+          Muat naik helaian watak (Character Sheet) avatar anda. Penjana imej <strong>Nano Banana 2</strong> dan <strong>Veo</strong> akan mengikut <strong>100% rupa paras, gaya rambut, pakaian, dan identiti visual</strong> daripada gambar rujukan yang dimuat naik dalam gaya mengajar/membentang yang dinamik.
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
         {/* Left Column: Image Upload & Visual Card */}
         <div className="md:col-span-5 space-y-3">
           <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
-            Imej Character Sheet
+            Imej Character Sheet Rujukan
           </div>
 
           <div className="p-4 rounded-2xl border border-white/10 bg-[#091322] flex flex-col items-center justify-center text-center space-y-3">
@@ -223,7 +223,7 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
                 <span>Status Watak:</span>
                 <span className="font-bold text-[#34D399] flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {previewImage ? 'Imej Aktif' : 'Spesifikasi Teks'}
+                  {previewImage ? '100% Mengikut Gambar Imej' : 'Spesifikasi Teks'}
                 </span>
               </div>
               <div className="text-[11px] font-mono text-slate-400 truncate">
@@ -311,7 +311,7 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
 
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Pakaian / Kostum Khas
+                Pakaian / Kostum Khas (Pilihan)
               </label>
               <input
                 type="text"
@@ -319,29 +319,28 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
                 onChange={(e) =>
                   handleFieldChange(characterName, specs, e.target.value, gender)
                 }
-                placeholder="Contoh: Sut Korporat Biru Navy"
+                placeholder="Contoh: Mengikut Pakaian Gambar"
                 className="w-full px-3.5 py-2 rounded-xl border border-white/10 bg-[#091322] text-white text-xs focus:ring-2 focus:ring-[#06B6D4] focus:outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Huraian Terperinci Rupa Paras &amp; Spesifikasi Visual (Character Sheet Specs)
-            </label>
-            <textarea
-              rows={4}
-              value={specs}
-              onChange={(e) =>
-                handleFieldChange(characterName, e.target.value, customCostume, gender)
-              }
-              placeholder="Huraikan ciri fizikal, gaya rambut/tudung, ekspresi muka, bentuk cermin mata, aksesori, dan tona warna watak..."
-              className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#091322] text-white text-xs font-mono leading-relaxed focus:ring-2 focus:ring-[#06B6D4] focus:outline-none"
-            />
-            <div className="text-[11px] text-slate-400 mt-1">
-              * Teks spesifikasi ini dimasukkan secara automatik ke dalam prompt Nano Banana 2 dan Veo untuk mengekalkan konsistensi identiti watak.
+          {!previewImage && (
+            <div>
+              <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Huraian Rupa Paras (Hanya Digunakan Jika Tiada Gambar Dimuat Naik)
+              </label>
+              <textarea
+                rows={3}
+                value={specs}
+                onChange={(e) =>
+                  handleFieldChange(characterName, e.target.value, customCostume, gender)
+                }
+                placeholder="Huraikan ciri fizikal, gaya rambut/tudung, ekspresi muka, bentuk cermin mata, aksesori, dan tona warna watak..."
+                className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#091322] text-white text-xs font-mono leading-relaxed focus:ring-2 focus:ring-[#06B6D4] focus:outline-none"
+              />
             </div>
-          </div>
+          )}
 
           {/* Prompt Integration Preview Box */}
           <div className="p-3.5 rounded-xl bg-[#091322] border border-white/10 space-y-1.5">
@@ -349,7 +348,9 @@ export const CharacterSheetSection: React.FC<CharacterSheetSectionProps> = ({
               Pratonton Integrasi Prompt:
             </div>
             <div className="text-[11px] font-mono text-slate-300 line-clamp-2">
-              "...strictly replicating the uploaded Character Sheet '{characterName}' (Visual Identity &amp; Specs: {specs}, Attire: {customCostume})..."
+              {previewImage
+                ? `"...strictly preserving 100% identical face, hairstyle, clothing, skin tone, and full likeness from the attached reference Character Sheet image '${characterName}'..."`
+                : `"...strictly preserve character identity '${characterName}' (${specs})..."`}
             </div>
           </div>
         </div>
