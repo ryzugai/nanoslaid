@@ -17,6 +17,8 @@ export interface CharacterPoseVariation {
 }
 
 export interface CharacterSheetData {
+  id?: string;
+  slotNumber?: number; // 1, 2, 3, 4
   fileName: string;
   imageUrl: string; // Base64 / blob data URL
   characterName: string; // e.g. "Dr. Aiman" or "Prof. Siti"
@@ -49,6 +51,8 @@ export interface SetupConfig {
   topic: string;
   referenceText: string;
   characterSheet?: CharacterSheetData;
+  uploadedAvatars?: CharacterSheetData[]; // Up to 4 uploaded avatars for random distribution
+  avatarDistributionMode?: 'random' | 'sequential' | 'single';
   uploadedPpt?: UploadedPptData;
 }
 
@@ -138,6 +142,8 @@ export interface SlideData {
   infographicPoints?: string[];
   infographicMeta?: InfographicMetaData;
   mcqDetails?: McqDetails;
+  assignedAvatar?: CharacterSheetData; // Avatar assigned to this specific slide (from 4 uploaded avatars)
+  avatarSlot?: number; // 1, 2, 3, 4
   promptNanoBanana2: string;
   promptVeo10s: string;
   promptVeo5s: string;

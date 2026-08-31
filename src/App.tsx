@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { SetupConfig, SlideData, DraftSlideItem } from './types';
-import { generateCurated45Slides, generateDraftCurriculum } from './utils/slideGenerator';
+import { SetupConfig, SlideData, DraftSlideItem, CharacterSheetData } from './types';
+import {
+  generateCurated45Slides,
+  generateDraftCurriculum,
+  reassignAvatarsRandomly,
+  updateSingleSlideAvatar
+} from './utils/slideGenerator';
 import { OFFICIAL_COLOR_SCHEMES } from './data/colorSchemes';
 import { Header } from './components/Header';
 import { SlideCard } from './components/SlideCard';
@@ -10,6 +15,7 @@ import { ExportModal } from './components/ExportModal';
 import { TeleprompterModal } from './components/TeleprompterModal';
 import { DraftReviewModal } from './components/DraftReviewModal';
 import { AvatarGenerationModal } from './components/AvatarGenerationModal';
+import { MultiAvatarUploadModal } from './components/MultiAvatarUploadModal';
 import {
   Search,
   SlidersHorizontal,
@@ -19,7 +25,9 @@ import {
   Trash2,
   AlertCircle,
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  Users,
+  Shuffle
 } from 'lucide-react';
 
 export default function App() {
@@ -39,7 +47,45 @@ export default function App() {
       specs: 'Lelaki berumur 32 tahun, berwajah kemas profesional, berambut pendek rapi, memakai cermin mata nipis moden, sut korporat biru navy kemas dengan kemeja putih',
       customCostume: 'Sut Korporat Navy Blue',
       gender: 'Lelaki',
-    }
+    },
+    uploadedAvatars: [
+      {
+        id: 'slot-1',
+        slotNumber: 1,
+        fileName: 'avatar_1.png',
+        characterName: 'DR. AIMAN',
+        specs: 'Lelaki berumur 32 tahun, berwajah kemas profesional, berambut pendek rapi, cermin mata nipis, sut korporat biru navy',
+        customCostume: 'Sut Korporat Navy Blue',
+        gender: 'Lelaki'
+      },
+      {
+        id: 'slot-2',
+        slotNumber: 2,
+        fileName: 'avatar_2.png',
+        characterName: 'PROF. SITI',
+        specs: 'Wanita berumur 35 tahun, bertudung bawal sutera ungu muda elegan, sut blazer moden kemas',
+        customCostume: 'Blazer Moden & Hijab Ungu',
+        gender: 'Wanita'
+      },
+      {
+        id: 'slot-3',
+        slotNumber: 3,
+        fileName: 'avatar_3.png',
+        characterName: 'EN. RAZAK',
+        specs: 'Lelaki berumur 40 tahun, pakar strategi kanan, kemeja putih formal bertali leher merah maroon',
+        customCostume: 'Kemeja Formal & Tali Leher',
+        gender: 'Lelaki'
+      },
+      {
+        id: 'slot-4',
+        slotNumber: 4,
+        fileName: 'avatar_4.png',
+        characterName: 'PN. FARIDAH',
+        specs: 'Wanita eksekutif korporat, berhijab hitam moden, jaket blazer kelabu profesional',
+        customCostume: 'Jaket Blazer Kelabu & Hijab Hitam',
+        gender: 'Wanita'
+      }
+    ]
   });
 
   // Slide generation & draft state
@@ -52,10 +98,11 @@ export default function App() {
   // Single settings panel toggle state on main page
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
 
-  // Modals for Export, Quiz, Teleprompter, Avatar
+  // Modals for Export, Quiz, Teleprompter, Avatar, Multi-Avatar
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isMultiAvatarModalOpen, setIsMultiAvatarModalOpen] = useState(false);
   const [teleprompterSlide, setTeleprompterSlide] = useState<SlideData | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'infographic' | 'mcq' | 'left' | 'right' | 'withImage'>('all');
@@ -146,6 +193,47 @@ export default function App() {
           ? { ...s, generatedImageUrl: imageUrl, imageSource: source }
           : s
       )
+    );
+  };
+
+  // Save 4 uploaded avatars
+  const handleSaveMultiAvatars = (avatars: CharacterSheetData[]) => {
+    const primary = avatars.find((a) => a.imageUrl) || avatars[0] || config.characterSheet;
+    const newConfig: SetupConfig = {
+      ...config,
+      uploadedAvatars: avatars,
+      characterSheet: primary ? {
+        ...primary,
+        fileName: primary.fileName || 'avatar_1.png',
+      } : config.characterSheet,
+      nametagText: primary?.characterName || config.nametagText,
+    };
+    setConfig(newConfig);
+
+    // If slides already exist, automatically reassign/distribute the 4 avatars across the 45 slides
+    if (slides.length > 0) {
+      const remapped = reassignAvatarsRandomly(slides, avatars, newConfig);
+      setSlides(remapped);
+    }
+  };
+
+  // Shuffle 4 avatars across 45 slides on demand
+  const handleShuffleSlideAvatars = (avatarsToUse?: CharacterSheetData[]) => {
+    const avs = avatarsToUse || config.uploadedAvatars || [];
+    if (avs.length === 0 || slides.length === 0) return;
+    const remapped = reassignAvatarsRandomly(slides, avs, config);
+    setSlides(remapped);
+  };
+
+  // Update a single slide's avatar
+  const handleUpdateSingleSlideAvatar = (slideNumber: number, avatar: CharacterSheetData) => {
+    setSlides((prev) =>
+      prev.map((s) => {
+        if (s.slideNumber === slideNumber) {
+          return updateSingleSlideAvatar(s, avatar, config);
+        }
+        return s;
+      })
     );
   };
 
@@ -290,6 +378,8 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
               onChangeConfig={setConfig}
               onGenerate={handleStartDraftReview}
               onOpenAvatarModal={() => setIsAvatarModalOpen(true)}
+              onOpenMultiAvatarModal={() => setIsMultiAvatarModalOpen(true)}
+              onShuffleSlideAvatars={() => handleShuffleSlideAvatars()}
               isGenerating={isGenerating}
               hasExistingSlides={false}
             />
@@ -309,6 +399,8 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                   onChangeConfig={setConfig}
                   onGenerate={handleStartDraftReview}
                   onOpenAvatarModal={() => setIsAvatarModalOpen(true)}
+                  onOpenMultiAvatarModal={() => setIsMultiAvatarModalOpen(true)}
+                  onShuffleSlideAvatars={() => handleShuffleSlideAvatars()}
                   isGenerating={isGenerating}
                   hasExistingSlides={true}
                   onClosePanel={() => setShowSettingsPanel(false)}
@@ -339,7 +431,9 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                 <p className="text-xs text-slate-400 flex items-center gap-2">
                   <span>Skim #{currentScheme.id}: {currentScheme.name}</span>
                   <span>•</span>
-                  <span>Avatar: {config.characterSheet?.characterName || config.nametagText}</span>
+                  <span>
+                    4 Watak Aktif: {config.uploadedAvatars?.map((a) => a.characterName).join(', ') || config.characterSheet?.characterName}
+                  </span>
                   {config.uploadedPpt && (
                     <>
                       <span>•</span>
@@ -351,6 +445,26 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
 
               {/* Action Toolbar */}
               <div className="flex flex-wrap items-center gap-2.5 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsMultiAvatarModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 flex items-center gap-1.5 transition-all shadow-sm"
+                  title="Urus 4 watak avatar untuk slaid"
+                >
+                  <Users className="w-3.5 h-3.5 text-[#06B6D4]" />
+                  <span>Urus 4 Watak</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleShuffleSlideAvatars()}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 flex items-center gap-1.5 transition-all"
+                  title="Rawakkan semula 4 watak ke semua 45 slaid"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span>Rawakkan 4 Watak</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setIsDraftModalOpen(true)}
@@ -505,6 +619,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                     config={config}
                     onOpenTeleprompter={(s) => setTeleprompterSlide(s)}
                     onUpdateSlideImage={handleUpdateSlideImage}
+                    onUpdateSlideAvatar={handleUpdateSingleSlideAvatar}
                   />
                 ))}
               </div>
@@ -559,6 +674,18 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
             characterSheet: updatedSheet,
             nametagText: updatedSheet.characterName || prev.nametagText,
           }));
+        }}
+      />
+
+      {/* Multi-Avatar 4-Slot Upload & Randomizer Modal */}
+      <MultiAvatarUploadModal
+        isOpen={isMultiAvatarModalOpen}
+        onClose={() => setIsMultiAvatarModalOpen(false)}
+        config={config}
+        onSaveAvatars={handleSaveMultiAvatars}
+        onDistributeToSlides={(updatedAvatars) => {
+          handleSaveMultiAvatars(updatedAvatars);
+          handleShuffleSlideAvatars(updatedAvatars);
         }}
       />
     </div>

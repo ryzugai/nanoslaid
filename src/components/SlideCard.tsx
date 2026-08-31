@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SlideData, SetupConfig } from '../types';
+import { SlideData, SetupConfig, CharacterSheetData } from '../types';
 import { SlideVisualMockup } from './SlideVisualMockup';
 import { generateNanoBanana2Image, downloadImage } from '../utils/imageRenderer';
 import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
@@ -21,7 +21,9 @@ import {
   Image as ImageIcon,
   Loader2,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  User,
+  Shuffle
 } from 'lucide-react';
 
 interface SlideCardProps {
@@ -29,6 +31,7 @@ interface SlideCardProps {
   config: SetupConfig;
   onOpenTeleprompter: (slide: SlideData) => void;
   onUpdateSlideImage?: (slideNumber: number, imageUrl: string, source: string) => void;
+  onUpdateSlideAvatar?: (slideNumber: number, avatar: CharacterSheetData) => void;
 }
 
 export const SlideCard: React.FC<SlideCardProps> = ({
@@ -36,6 +39,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
   config,
   onOpenTeleprompter,
   onUpdateSlideImage,
+  onUpdateSlideAvatar,
 }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showVisualMockup, setShowVisualMockup] = useState(false);
@@ -146,6 +150,44 @@ export const SlideCard: React.FC<SlideCardProps> = ({
               Watak: {slide.characterPosition}
             </span>
 
+            {/* Assigned Avatar Badge (from 4 Uploaded Avatars) */}
+            {slide.assignedAvatar ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#06B6D4]/15 text-[#06B6D4] border border-[#06B6D4]/40 flex items-center gap-1">
+                  <User className="w-3 h-3 text-[#06B6D4]" />
+                  <span>
+                    Watak #{slide.avatarSlot || 1}: {slide.assignedAvatar.characterName}
+                  </span>
+                </span>
+
+                {config.uploadedAvatars && config.uploadedAvatars.length > 1 && onUpdateSlideAvatar && (
+                  <select
+                    value={slide.avatarSlot || 1}
+                    onChange={(e) => {
+                      const selectedSlot = Number(e.target.value);
+                      const targetAv = config.uploadedAvatars?.find((a) => (a.slotNumber || 1) === selectedSlot) || config.uploadedAvatars?.[selectedSlot - 1];
+                      if (targetAv) {
+                        onUpdateSlideAvatar(slide.slideNumber, targetAv);
+                      }
+                    }}
+                    className="bg-[#091322] text-[10px] text-slate-300 border border-white/15 rounded px-1.5 py-0.5 focus:outline-none focus:border-[#06B6D4]"
+                    title="Tukar watak pembentang bagi slaid ini"
+                  >
+                    {config.uploadedAvatars.map((av, avIdx) => (
+                      <option key={av.id || avIdx} value={av.slotNumber || avIdx + 1}>
+                        Slot {av.slotNumber || avIdx + 1}: {av.characterName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            ) : config.characterSheet ? (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#06B6D4]/15 text-[#06B6D4] border border-[#06B6D4]/40 flex items-center gap-1">
+                <User className="w-3 h-3 text-[#06B6D4]" />
+                <span>Watak: {config.characterSheet.characterName}</span>
+              </span>
+            ) : null}
+
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#091322] text-slate-300 border border-white/10">
               {slide.imageSize} • {slide.ethnicity}
             </span>
@@ -155,9 +197,9 @@ export const SlideCard: React.FC<SlideCardProps> = ({
               {teachingPose.title}
             </span>
 
-            {config.useNametag && config.nametagText && (
+            {config.useNametag && (slide.assignedAvatar?.characterName || config.nametagText) && (
               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/30 uppercase">
-                Nametag: {config.nametagText}
+                Nametag: {slide.assignedAvatar?.characterName || config.nametagText}
               </span>
             )}
 

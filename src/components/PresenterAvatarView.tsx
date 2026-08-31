@@ -16,7 +16,7 @@ export const PresenterAvatarView: React.FC<PresenterAvatarViewProps> = ({
   isLeft = true,
 }) => {
   const isPixar = config.presenterStyle === 'Pixar 3D Style';
-  const charSheet = config.characterSheet;
+  const charSheet = slide.assignedAvatar || config.characterSheet;
   const charName = (charSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
   const gender = charSheet?.gender || (slide.ethnicity === 'Melayu berhijab' ? 'Wanita' : 'Lelaki');
   const isHijab = gender === 'Wanita' || slide.ethnicity === 'Melayu berhijab';

@@ -8,6 +8,8 @@ import {
   FileText,
   Sparkles,
   User,
+  Users,
+  Shuffle,
   Palette,
   Globe2,
   CheckCircle2,
@@ -30,6 +32,8 @@ interface MainSetupSectionProps {
   onChangeConfig: (newConfig: SetupConfig) => void;
   onGenerate: (overrideConfig?: SetupConfig) => void;
   onOpenAvatarModal?: () => void;
+  onOpenMultiAvatarModal?: () => void;
+  onShuffleSlideAvatars?: () => void;
   isGenerating: boolean;
   hasExistingSlides: boolean;
   onClosePanel?: () => void;
@@ -50,6 +54,8 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
   onChangeConfig,
   onGenerate,
   onOpenAvatarModal,
+  onOpenMultiAvatarModal,
+  onShuffleSlideAvatars,
   isGenerating,
   hasExistingSlides,
   onClosePanel,
@@ -487,6 +493,86 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
               </span>
             </div>
 
+            {/* 4 Multi-Avatar Slots Quick Overview */}
+            <div className="p-3.5 rounded-xl border border-[#06B6D4]/30 bg-[#07152B] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                  <Users className="w-4 h-4 text-[#06B6D4]" />
+                  <span>Sistem 4 Watak Avatar (Rawak ke 45 Slaid)</span>
+                </div>
+
+                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+                  {config.uploadedAvatars?.filter((a) => a.imageUrl).length || 0}/4 Foto Sedia
+                </span>
+              </div>
+
+              {/* 4 Avatar Miniature Thumbnails */}
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((slotIdx) => {
+                  const avatar = config.uploadedAvatars?.[slotIdx - 1];
+                  const hasPic = Boolean(avatar?.imageUrl);
+                  const name = avatar?.characterName || `Watak #${slotIdx}`;
+
+                  return (
+                    <div
+                      key={`mini-slot-${slotIdx}`}
+                      onClick={onOpenMultiAvatarModal}
+                      className="group cursor-pointer rounded-lg border border-slate-700 hover:border-[#06B6D4] bg-[#050D1A] p-1.5 flex flex-col items-center justify-between text-center transition-all h-20 relative overflow-hidden"
+                    >
+                      <div className="w-full flex items-center justify-between text-[9px] font-mono text-slate-400">
+                        <span className="font-bold text-[#06B6D4]">#{slotIdx}</span>
+                        {hasPic && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                      </div>
+
+                      {hasPic ? (
+                        <div className="w-8 h-10 flex items-center justify-center">
+                          <img
+                            src={avatar?.imageUrl}
+                            alt={name}
+                            className="max-h-full max-w-full object-contain filter drop-shadow-xs group-hover:scale-110 transition-transform"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+
+                      <span className="text-[9px] font-bold text-slate-300 truncate w-full">
+                        {name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Multi-Avatar Buttons */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {onOpenMultiAvatarModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenMultiAvatarModal}
+                    className="flex-1 px-3 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-[#06B6D4] to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 flex items-center justify-center gap-1.5 shadow-md transition-all"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Urus &amp; Muat Naik 4 Watak</span>
+                  </button>
+                )}
+
+                {hasExistingSlides && onShuffleSlideAvatars && (
+                  <button
+                    type="button"
+                    onClick={onShuffleSlideAvatars}
+                    className="px-3 py-2 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 flex items-center gap-1.5 transition-all"
+                    title="Rawakkan semula 4 watak ini ke semua 45 slaid"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    <span>Rawakkan ke Slaid</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Character Sheet Upload & Preview */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -513,7 +599,7 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
                         className="px-3 py-1.5 rounded-xl border border-[#06B6D4]/50 bg-gradient-to-r from-[#06B6D4]/20 to-[#3B82F6]/20 hover:from-[#06B6D4]/30 hover:to-[#3B82F6]/30 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-[#06B6D4]" />
-                        <span>{config.characterSheet?.imageUrl ? 'Urus / Jana Semula 4 Gaya Watak' : 'Jana Watak (4 Gaya) & Buang BG'}</span>
+                        <span>{config.characterSheet?.imageUrl ? 'Jana 4 Gaya Watak AI' : 'Jana Watak (4 Gaya) & Buang BG'}</span>
                       </button>
                     )}
 
@@ -521,7 +607,7 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
                       <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
                       <span>
                         {config.characterSheet?.imageUrl
-                          ? 'Tukar Sheet'
+                          ? 'Tukar Sheet Utama'
                           : 'Upload Sheet'}
                       </span>
                       <input

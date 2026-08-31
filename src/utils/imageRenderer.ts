@@ -147,11 +147,12 @@ export async function renderSlideToCanvasDataUrl(
   ctx.fillStyle = shadowGrad;
   ctx.fillRect(presenterShadowX - 300, height - 90, 600, 80);
 
-  // Preload Character Sheet Image if provided
+  // Preload Character Sheet Image if provided (from slide.assignedAvatar or config.characterSheet)
+  const activeChar = slide.assignedAvatar || config.characterSheet;
   let preloadedCharImg: HTMLImageElement | null = null;
-  if (config.characterSheet?.imageUrl) {
+  if (activeChar?.imageUrl) {
     try {
-      preloadedCharImg = await loadImage(config.characterSheet.imageUrl);
+      preloadedCharImg = await loadImage(activeChar.imageUrl);
     } catch (e) {
       console.warn('Failed to preload character sheet image:', e);
     }
@@ -242,10 +243,12 @@ export async function renderSlideToCanvasDataUrl(
   }
 
   // 6. Presenter & Studio Info Badge (Clean metadata watermark)
-  const presenterName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
+  const activePresenter = slide.assignedAvatar || config.characterSheet;
+  const presenterName = (activePresenter?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
   ctx.save();
   ctx.font = '800 15px "Plus Jakarta Sans", monospace';
-  const tagText = `WATAK: ${presenterName} • 3D AI PROMPT`;
+  const slotSuffix = slide.avatarSlot ? ` [WATAK #${slide.avatarSlot}]` : '';
+  const tagText = `WATAK: ${presenterName}${slotSuffix} • 3D AI PROMPT`;
   const tagW = ctx.measureText(tagText).width + 28;
   const tagX = contentX;
   const tagY = height - 45;
@@ -1675,8 +1678,9 @@ function drawAvatarPresenterOnCanvas(
   ctx.save();
   const centerX = x + w / 2;
   const isPixar = config.presenterStyle === 'Pixar 3D Style';
-  const charName = (config.characterSheet?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
-  const gender = config.characterSheet?.gender || (slide.ethnicity === 'Melayu berhijab' ? 'Wanita' : 'Lelaki');
+  const activeChar = slide.assignedAvatar || config.characterSheet;
+  const charName = (activeChar?.characterName || config.nametagText || 'DR. AIMAN').toUpperCase();
+  const gender = activeChar?.gender || (slide.ethnicity === 'Melayu berhijab' ? 'Wanita' : 'Lelaki');
   const isHijab = gender === 'Wanita' || slide.ethnicity === 'Melayu berhijab';
 
   const poseNumber = slide.slideNumber;

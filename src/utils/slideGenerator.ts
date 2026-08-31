@@ -1,4 +1,13 @@
-import { SetupConfig, SlideData, InfographicArchetype, InfographicMetaData, McqDetails, McqOption, DraftSlideItem } from '../types';
+import {
+  SetupConfig,
+  SlideData,
+  InfographicArchetype,
+  InfographicMetaData,
+  McqDetails,
+  McqOption,
+  DraftSlideItem,
+  CharacterSheetData
+} from '../types';
 import { OFFICIAL_COLOR_SCHEMES } from '../data/colorSchemes';
 
 
@@ -186,6 +195,7 @@ export function buildOfficialPrompts(params: {
   config: SetupConfig;
   pointsOrContent: string;
   isMcq: boolean;
+  assignedAvatar?: CharacterSheetData;
   infographicType?: InfographicArchetype;
   infographicMeta?: InfographicMetaData;
   mcqData?: {
@@ -209,24 +219,26 @@ export function buildOfficialPrompts(params: {
   const posMalay = position.toLowerCase(); // 'kiri' or 'kanan'
   const posEn = position === 'KIRI' ? 'left' : 'right';
 
-  const charName = (params.config.characterSheet?.characterName || params.config.nametagText || (isMalay ? 'DR. AIMAN' : 'DR. ALEX')).toUpperCase();
-  const nametagSnippet = params.config.useNametag && params.config.nametagText.trim()
+  const activeAvatar = params.assignedAvatar || params.config.characterSheet;
+  const charName = (activeAvatar?.characterName || params.config.nametagText || (isMalay ? 'DR. AIMAN' : 'DR. ALEX')).toUpperCase();
+  const effectiveNametag = activeAvatar?.characterName || params.config.nametagText;
+  const nametagSnippet = params.config.useNametag && effectiveNametag.trim()
     ? (isMalay
-        ? `lencana nametag poket dada dengan teks putih tebal: '${params.config.nametagText.trim().toUpperCase()}'`
-        : `chest pocket nametag badge with crisp bold white letters: '${params.config.nametagText.trim().toUpperCase()}'`)
+        ? `lencana nametag poket dada dengan teks putih tebal: '${effectiveNametag.trim().toUpperCase()}'`
+        : `chest pocket nametag badge with crisp bold white letters: '${effectiveNametag.trim().toUpperCase()}'`)
     : (isMalay ? `pakaian korporat kemas dan profesional` : `clean tailored corporate attire`);
 
   const dynamicPose = getPresenterDynamicExplainingPose(params.slideNumber, params.isMcq);
 
   // Map slide number to one of the 4 presentation poses
   const poseIndex = params.isMcq ? 3 : ((params.slideNumber - 1) % 4);
-  const activePoseVariation = params.config.characterSheet?.poses?.[poseIndex];
+  const activePoseVariation = activeAvatar?.poses?.[poseIndex];
   const poseStyleNote = activePoseVariation ? ` [GAYA PEMBENTANGAN ${poseIndex + 1}: ${activePoseVariation.label} - ${activePoseVariation.description}]` : '';
 
-  const characterSheetPrompt = params.config.characterSheet?.imageUrl
+  const characterSheetPrompt = activeAvatar?.imageUrl
     ? `preserving 100% likeness, facial structure, eye shape, hairstyle, glasses, and skin tone from the reference Character Sheet of '${charName}', rendered in ${params.config.presenterStyle}${poseStyleNote}`
-    : params.config.characterSheet?.specs
-    ? `character identity '${charName}' (${params.config.characterSheet.specs}${params.config.characterSheet.customCostume ? `, Outfit: ${params.config.characterSheet.customCostume}` : ''}) in ${params.config.presenterStyle}${poseStyleNote}`
+    : activeAvatar?.specs
+    ? `character identity '${charName}' (${activeAvatar.specs}${activeAvatar.customCostume ? `, Outfit: ${activeAvatar.customCostume}` : ''}) in ${params.config.presenterStyle}${poseStyleNote}`
     : `a charismatic 3D animated presenter in ${params.config.presenterStyle}${poseStyleNote}`;
 
   // Build high-craft, non-list, eye-catching visual layout descriptions
@@ -1122,6 +1134,11 @@ export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: Dr
     ? approvedDrafts
     : generateDraftCurriculum(config);
 
+  // Active avatars pool (4 uploaded avatars or single character sheet)
+  const avatarsPool = (config.uploadedAvatars && config.uploadedAvatars.length > 0)
+    ? config.uploadedAvatars
+    : (config.characterSheet ? [config.characterSheet] : []);
+
   const slides: SlideData[] = [];
 
   for (let i = 1; i <= 45; i++) {
@@ -1130,6 +1147,17 @@ export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: Dr
     const ethnicity = getSlideEthnicity(i);
     const imageSize = getSlideImageSize(i);
     const isMcq = draft.isMcq;
+
+    // Pick avatar randomly & evenly across the 4 uploaded avatars
+    let assignedAvatar: CharacterSheetData | undefined = undefined;
+    let avatarSlot: number | undefined = undefined;
+
+    if (avatarsPool.length > 0) {
+      // Well-distributed pseudo-random pattern across the 4 avatar slots
+      const avIndex = (i * 3 + Math.floor((i - 1) / 3)) % avatarsPool.length;
+      assignedAvatar = avatarsPool[avIndex];
+      avatarSlot = assignedAvatar.slotNumber || (avIndex + 1);
+    }
 
     let script30s = '';
     let script10s = '';
@@ -1190,6 +1218,7 @@ export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: Dr
       config,
       pointsOrContent: isMcq ? (draft.mcqDetails?.question || draft.summary) : draft.points.join(' | '),
       isMcq,
+      assignedAvatar,
       infographicType: draft.infographicType,
       infographicMeta: draft.meta,
       mcqData: draft.mcqDetails,
@@ -1213,6 +1242,8 @@ export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: Dr
       infographicPoints: draft.points,
       infographicMeta: draft.meta,
       mcqDetails: draft.mcqDetails,
+      assignedAvatar,
+      avatarSlot,
       promptNanoBanana2: prompts.promptNanoBanana2,
       promptVeo10s: prompts.promptVeo10s,
       promptVeo5s: prompts.promptVeo5s,
@@ -1224,5 +1255,78 @@ export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: Dr
   }
 
   return slides;
+}
+
+/**
+ * Re-distributes/shuffles the 4 uploaded avatars randomly across an existing set of 45 slides
+ */
+export function reassignAvatarsRandomly(slides: SlideData[], avatars: CharacterSheetData[], config: SetupConfig): SlideData[] {
+  if (!avatars || avatars.length === 0) return slides;
+
+  // Shuffle algorithm across the array
+  return slides.map((slide, idx) => {
+    // Pick random avatar or rotating pseudo-random
+    const randomAvatarIdx = Math.floor(Math.random() * avatars.length);
+    const chosenAvatar = avatars[randomAvatarIdx];
+
+    const prompts = buildOfficialPrompts({
+      slideNumber: slide.slideNumber,
+      title: slide.title,
+      config,
+      pointsOrContent: slide.isMcq ? (slide.mcqDetails?.question || slide.title) : (slide.infographicPoints?.join(' | ') || slide.title),
+      isMcq: slide.isMcq,
+      assignedAvatar: chosenAvatar,
+      infographicType: slide.infographicType,
+      infographicMeta: slide.infographicMeta,
+      mcqData: slide.mcqDetails,
+      script30s: slide.scriptAvatar30s,
+      scriptNarration10s: slide.promptVeo10s,
+      scriptConcise5s: slide.promptVeo5s
+    });
+
+    const updatedSlide: SlideData = {
+      ...slide,
+      assignedAvatar: chosenAvatar,
+      avatarSlot: chosenAvatar.slotNumber || (randomAvatarIdx + 1),
+      promptNanoBanana2: prompts.promptNanoBanana2,
+      promptVeo10s: prompts.promptVeo10s,
+      promptVeo5s: prompts.promptVeo5s,
+    };
+
+    updatedSlide.fullFormattedBlock = formatSlideFullBlock(updatedSlide);
+    return updatedSlide;
+  });
+}
+
+/**
+ * Updates a single slide's assigned avatar
+ */
+export function updateSingleSlideAvatar(slide: SlideData, newAvatar: CharacterSheetData, config: SetupConfig): SlideData {
+  const prompts = buildOfficialPrompts({
+    slideNumber: slide.slideNumber,
+    title: slide.title,
+    config,
+    pointsOrContent: slide.isMcq ? (slide.mcqDetails?.question || slide.title) : (slide.infographicPoints?.join(' | ') || slide.title),
+    isMcq: slide.isMcq,
+    assignedAvatar: newAvatar,
+    infographicType: slide.infographicType,
+    infographicMeta: slide.infographicMeta,
+    mcqData: slide.mcqDetails,
+    script30s: slide.scriptAvatar30s,
+    scriptNarration10s: slide.promptVeo10s,
+    scriptConcise5s: slide.promptVeo5s
+  });
+
+  const updated: SlideData = {
+    ...slide,
+    assignedAvatar: newAvatar,
+    avatarSlot: newAvatar.slotNumber || 1,
+    promptNanoBanana2: prompts.promptNanoBanana2,
+    promptVeo10s: prompts.promptVeo10s,
+    promptVeo5s: prompts.promptVeo5s,
+  };
+
+  updated.fullFormattedBlock = formatSlideFullBlock(updated);
+  return updated;
 }
 
