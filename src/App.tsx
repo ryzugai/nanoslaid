@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { SetupConfig, SlideData } from './types';
-import { generateCurated45Slides } from './utils/slideGenerator';
+import { SetupConfig, SlideData, DraftSlideItem } from './types';
+import { generateCurated45Slides, generateDraftCurriculum } from './utils/slideGenerator';
 import { OFFICIAL_COLOR_SCHEMES } from './data/colorSchemes';
 import { Header } from './components/Header';
 import { SlideCard } from './components/SlideCard';
@@ -8,6 +8,7 @@ import { MainSetupSection } from './components/MainSetupSection';
 import { MCQQuizModal } from './components/MCQQuizModal';
 import { ExportModal } from './components/ExportModal';
 import { TeleprompterModal } from './components/TeleprompterModal';
+import { DraftReviewModal } from './components/DraftReviewModal';
 import {
   Search,
   SlidersHorizontal,
@@ -15,7 +16,9 @@ import {
   RefreshCw,
   FileDown,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function App() {
@@ -38,8 +41,10 @@ export default function App() {
     }
   });
 
-  // Slide generation state
+  // Slide generation & draft state
   const [slides, setSlides] = useState<SlideData[]>([]);
+  const [draftSlides, setDraftSlides] = useState<DraftSlideItem[]>([]);
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
@@ -55,8 +60,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedAll, setCopiedAll] = useState(false);
 
-  // Trigger Slide Generation from Current Config
-  const handleGenerateSlides = (activeConfig: SetupConfig = config) => {
+  // Step 1: Generate Draft Curriculum from User Keywords / PPT
+  const handleStartDraftReview = (activeConfig: SetupConfig = config) => {
     if (!activeConfig.topic.trim() && !activeConfig.uploadedPpt && !activeConfig.referenceText.trim()) {
       setGenerationError('Sila muat naik fail PowerPoint (.PPTX) atau masukkan tajuk / isi kandungan slaid.');
       return;
@@ -67,17 +72,37 @@ export default function App() {
 
     setTimeout(() => {
       try {
-        const generated = generateCurated45Slides(activeConfig);
-        setSlides(generated);
+        const drafts = generateDraftCurriculum(activeConfig);
+        setDraftSlides(drafts);
         setConfig(activeConfig);
-        setShowSettingsPanel(false);
+        setIsDraftModalOpen(true);
       } catch (err) {
         console.error(err);
-        setGenerationError('Ralat semasa menjana slaid. Sila cuba lagi.');
+        setGenerationError('Ralat semasa mengekstrak draf kandungan. Sila cuba lagi.');
       } finally {
         setIsGenerating(false);
       }
-    }, 400);
+    }, 200);
+  };
+
+  // Step 2: User Approves Draft -> Generate Full Prompts
+  const handleApproveDraft = (approvedDrafts: DraftSlideItem[]) => {
+    setIsGenerating(true);
+    setDraftSlides(approvedDrafts);
+
+    setTimeout(() => {
+      try {
+        const generated = generateCurated45Slides(config, approvedDrafts);
+        setSlides(generated);
+        setIsDraftModalOpen(false);
+        setShowSettingsPanel(false);
+      } catch (err) {
+        console.error(err);
+        setGenerationError('Ralat semasa menjana teks prompt penuh.');
+      } finally {
+        setIsGenerating(false);
+      }
+    }, 300);
   };
 
   // Reset to Empty Slate
@@ -86,6 +111,8 @@ export default function App() {
       return;
     }
     setSlides([]);
+    setDraftSlides([]);
+    setIsDraftModalOpen(false);
     setShowSettingsPanel(false);
     setConfig({
       topic: '',
@@ -107,6 +134,7 @@ export default function App() {
     });
     setGenerationError(null);
   };
+
 
   // Update slide with generated image
   const handleUpdateSlideImage = (slideNumber: number, imageUrl: string, source: string) => {
@@ -258,7 +286,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
             <MainSetupSection
               config={config}
               onChangeConfig={setConfig}
-              onGenerate={handleGenerateSlides}
+              onGenerate={handleStartDraftReview}
               isGenerating={isGenerating}
               hasExistingSlides={false}
             />
@@ -276,7 +304,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                 <MainSetupSection
                   config={config}
                   onChangeConfig={setConfig}
-                  onGenerate={handleGenerateSlides}
+                  onGenerate={handleStartDraftReview}
                   isGenerating={isGenerating}
                   hasExistingSlides={true}
                   onClosePanel={() => setShowSettingsPanel(false)}
@@ -293,8 +321,9 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
 
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20">
-                    KANDUNGAN BERASASKAN INPUT ANDA
+                  <span className="text-xs font-mono font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    SIFAR HALUSINASI • POIN SEBENAR
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
                     {slides.length} Slaid Terjana
@@ -318,6 +347,16 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
 
               {/* Action Toolbar */}
               <div className="flex flex-wrap items-center gap-2.5 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsDraftModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1.5 transition-all font-mono"
+                  title="Semak atau sunting draf teks 45 slaid"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Semak Draf Teks (45 Slaid)</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleResetToEmpty}
@@ -493,6 +532,16 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
         onClose={() => setTeleprompterSlide(null)}
         slide={teleprompterSlide}
         config={config}
+      />
+
+      {/* 45-Slide Curriculum Draft Review & Approval Modal */}
+      <DraftReviewModal
+        isOpen={isDraftModalOpen}
+        drafts={draftSlides}
+        config={config}
+        onApproveAndGenerate={handleApproveDraft}
+        onClose={() => setIsDraftModalOpen(false)}
+        isGeneratingPrompts={isGenerating}
       />
     </div>
   );

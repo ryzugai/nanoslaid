@@ -1499,9 +1499,8 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 /**
  * Intelligent background removal & alpha matte extraction for 3D Character Sheets.
- * Automatically samples studio/backdrop edges, calculates color Euclidean distance,
- * and feather-keys out solid white/grey backdrops while keeping avatar clothing,
- * suit, face, hair, and fine silhouette intact.
+ * Uses border-connected BFS isolation to remove outer solid backdrops while keeping
+ * avatar clothing, suit, face, teeth, glasses, and silhouette 100% intact.
  */
 function extractPoseWithTransparentBackground(
   img: HTMLImageElement,
@@ -1519,17 +1518,28 @@ function extractPoseWithTransparentBackground(
   offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
   const imgData = offCtx.getImageData(0, 0, sw, sh);
   const data = imgData.data;
+  const totalPixels = sw * sh;
 
-  // Sample top, bottom, and outer edge pixels to identify the backdrop color
+  // Check if image is already a transparent PNG (corners transparent)
+  let transparentCorners = 0;
+  const corners = [0, sw - 1, (sh - 1) * sw, (sh - 1) * sw + (sw - 1)];
+  for (const c of corners) {
+    if (data[c * 4 + 3] < 50) transparentCorners++;
+  }
+  if (transparentCorners >= 3) {
+    return offCanvas;
+  }
+
+  // Sample top, left, right border pixels to identify the backdrop color
   let bgR = 0;
   let bgG = 0;
   let bgB = 0;
   let sampleCount = 0;
 
-  // 1. Sample along top border (usually pure backdrop)
-  for (let x = 0; x < sw; x += Math.max(1, Math.floor(sw / 12))) {
-    for (let y = 0; y < Math.min(sh, 25); y += 4) {
-      const idx = (y * sw + x) * 4;
+  // 1. Sample along top border
+  for (let x = 0; x < sw; x += Math.max(1, Math.floor(sw / 16))) {
+    const idx = x * 4;
+    if (data[idx + 3] > 200) {
       bgR += data[idx];
       bgG += data[idx + 1];
       bgB += data[idx + 2];
@@ -1537,49 +1547,105 @@ function extractPoseWithTransparentBackground(
     }
   }
 
-  // 2. Sample along left & right borders
-  for (let y = 0; y < sh; y += Math.max(1, Math.floor(sh / 20))) {
-    const leftIdx = (y * sw + 2) * 4;
-    bgR += data[leftIdx];
-    bgG += data[leftIdx + 1];
-    bgB += data[leftIdx + 2];
-    sampleCount++;
-
-    const rightIdx = (y * sw + Math.max(0, sw - 3)) * 4;
-    bgR += data[rightIdx];
-    bgG += data[rightIdx + 1];
-    bgB += data[rightIdx + 2];
-    sampleCount++;
+  // 2. Sample along left & right borders (upper half)
+  for (let y = 0; y < Math.floor(sh * 0.7); y += Math.max(1, Math.floor(sh / 20))) {
+    const leftIdx = (y * sw) * 4;
+    const rightIdx = (y * sw + (sw - 1)) * 4;
+    if (data[leftIdx + 3] > 200) {
+      bgR += data[leftIdx];
+      bgG += data[leftIdx + 1];
+      bgB += data[leftIdx + 2];
+      sampleCount++;
+    }
+    if (data[rightIdx + 3] > 200) {
+      bgR += data[rightIdx];
+      bgG += data[rightIdx + 1];
+      bgB += data[rightIdx + 2];
+      sampleCount++;
+    }
   }
 
-  bgR = sampleCount > 0 ? Math.round(bgR / sampleCount) : 255;
-  bgG = sampleCount > 0 ? Math.round(bgG / sampleCount) : 255;
-  bgB = sampleCount > 0 ? Math.round(bgB / sampleCount) : 255;
+  if (sampleCount === 0) return offCanvas;
 
-  const tolerance = 46; // Distance in RGB space
-  const feather = 26;
+  bgR = Math.round(bgR / sampleCount);
+  bgG = Math.round(bgG / sampleCount);
+  bgB = Math.round(bgB / sampleCount);
 
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const a = data[i + 3];
+  const tolerance = 36;
+  const tolSq = tolerance * tolerance;
+  const visited = new Uint8Array(totalPixels);
+  const isBackground = new Uint8Array(totalPixels);
+  const queue: number[] = [];
 
-    if (a === 0) continue;
+  const isBgColor = (pxIdx: number): boolean => {
+    const i4 = pxIdx * 4;
+    if (data[i4 + 3] < 30) return true;
+    const r = data[i4];
+    const g = data[i4 + 1];
+    const b = data[i4 + 2];
+    const distSq = (r - bgR) ** 2 + (g - bgG) ** 2 + (b - bgB) ** 2;
+    return distSq <= tolSq;
+  };
 
-    const diffR = r - bgR;
-    const diffG = g - bgG;
-    const diffB = b - bgB;
-    const dist = Math.sqrt(diffR * diffR + diffG * diffG + diffB * diffB);
+  // Seed BFS strictly from outer border pixels
+  for (let x = 0; x < sw; x++) {
+    const topPx = x;
+    if (!visited[topPx] && isBgColor(topPx)) {
+      visited[topPx] = 1;
+      isBackground[topPx] = 1;
+      queue.push(topPx);
+    }
+    const botPx = (sh - 1) * sw + x;
+    if (!visited[botPx] && isBgColor(botPx)) {
+      visited[botPx] = 1;
+      isBackground[botPx] = 1;
+      queue.push(botPx);
+    }
+  }
 
-    // Also detect neutral studio whites/greys common in AI character sheets
-    const isBrightStudioNeutral = r > 235 && g > 235 && b > 235 && Math.abs(r - g) < 18 && Math.abs(g - b) < 18;
+  for (let y = 0; y < sh; y++) {
+    const leftPx = y * sw;
+    if (!visited[leftPx] && isBgColor(leftPx)) {
+      visited[leftPx] = 1;
+      isBackground[leftPx] = 1;
+      queue.push(leftPx);
+    }
+    const rightPx = y * sw + (sw - 1);
+    if (!visited[rightPx] && isBgColor(rightPx)) {
+      visited[rightPx] = 1;
+      isBackground[rightPx] = 1;
+      queue.push(rightPx);
+    }
+  }
 
-    if (dist < tolerance || isBrightStudioNeutral) {
-      data[i + 3] = 0; // Transparent
-    } else if (dist < tolerance + feather) {
-      const factor = (dist - tolerance) / feather;
-      data[i + 3] = Math.round(a * factor);
+  let head = 0;
+  while (head < queue.length) {
+    const cur = queue[head++];
+    const cx = cur % sw;
+    const cy = Math.floor(cur / sw);
+
+    const neighbors = [
+      cy > 0 ? cur - sw : -1,
+      cy < sh - 1 ? cur + sw : -1,
+      cx > 0 ? cur - 1 : -1,
+      cx < sw - 1 ? cur + 1 : -1,
+    ];
+
+    for (const next of neighbors) {
+      if (next >= 0 && !visited[next]) {
+        visited[next] = 1;
+        if (isBgColor(next)) {
+          isBackground[next] = 1;
+          queue.push(next);
+        }
+      }
+    }
+  }
+
+  // Set transparency only on outer background pixels
+  for (let p = 0; p < totalPixels; p++) {
+    if (isBackground[p]) {
+      data[p * 4 + 3] = 0;
     }
   }
 

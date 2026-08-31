@@ -146,3 +146,15 @@ export interface GenerationProgress {
   message: string;
   error?: string;
 }
+
+export interface DraftSlideItem {
+  slideNumber: number; // 1 - 45
+  isMcq: boolean;
+  title: string;
+  summary?: string;
+  points: string[];
+  infographicType?: InfographicArchetype;
+  meta?: InfographicMetaData;
+  mcqDetails?: McqDetails;
+}
+

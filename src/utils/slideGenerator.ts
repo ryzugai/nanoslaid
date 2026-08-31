@@ -1,5 +1,6 @@
-import { SetupConfig, SlideData, InfographicArchetype, InfographicMetaData, McqDetails, McqOption } from '../types';
+import { SetupConfig, SlideData, InfographicArchetype, InfographicMetaData, McqDetails, McqOption, DraftSlideItem } from '../types';
 import { OFFICIAL_COLOR_SCHEMES } from '../data/colorSchemes';
+
 
 export function getSlideCharacterPosition(slideNumber: number): 'KIRI' | 'KANAN' {
   return slideNumber % 2 === 1 ? 'KIRI' : 'KANAN';
@@ -419,16 +420,17 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
     };
   }
 
-  // 2. Stat / Metric Gauge (Radial Gauges & KPI Telemetry)
-  if (/peratus|kadar|metrik|statistik|%|kpi|angka|jumlah|kos|unjuran|pencapaian/i.test(combined) || idx % 11 === 1) {
+  // 2. Stat / Metric Gauge (ONLY if actual numbers or percentages exist in the content!)
+  const hasRealNumericStats = /(\d+(?:\.\d+)?%|\$\d+|\b\d+x\b|\b\d{2,}\b)/i.test(combined);
+  if (hasRealNumericStats && /peratus|kadar|metrik|statistik|%|kpi|angka|jumlah|kos|unjuran|pencapaian/i.test(combined)) {
     const stats = safePoints.slice(0, 3).map((pt, sIdx) => {
       const numMatch = pt.match(/(\d+(?:\.\d+)?%?|\$\d+|\b\d+x\b)/i);
-      const val = numMatch ? numMatch[1] : sIdx === 0 ? '100%' : sIdx === 1 ? '98.5%' : '85%';
+      const val = numMatch ? numMatch[1] : (isMalay ? 'Optimum' : 'Optimal');
       const cleanLabel = pt.replace(val, '').replace(/^[:–-\s]+/, '').trim() || (isMalay ? `Faktor ${sIdx + 1}` : `Metric ${sIdx + 1}`);
       return {
         label: cleanLabel.length > 30 ? cleanLabel.slice(0, 30) + '...' : cleanLabel,
         value: val,
-        change: isMalay ? 'Pencapaian Optimum' : 'Optimal Target',
+        change: isMalay ? 'Pencapaian Diperakui' : 'Verified Target',
         icon: 'trending-up'
       };
     });
@@ -439,7 +441,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 3. Multi-Pillar (Architectural Columns with 3D Emblems)
-  if (/pilar|tonggak|teras|komponen|prinsip|pillar|dimension|dimensi|elemen|aspek|rukun|bahagian/i.test(combined) || idx % 11 === 2) {
+  if (/pilar|tonggak|teras|komponen|prinsip|pillar|dimension|dimensi|elemen|aspek|rukun|bahagian/i.test(combined) || idx % 9 === 0) {
     const pillars = safePoints.slice(0, 3).map((pt, pIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
@@ -455,7 +457,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 4. Comparison Matrix (Side-by-Side Contrast)
-  if (/banding|vs|versus|cabaran|lawan|matrix|perbezaan|tradisional|kebaikan|keburukan/i.test(combined) || idx % 11 === 3) {
+  if (/banding|vs|versus|cabaran|lawan|matrix|perbezaan|tradisional|kebaikan|keburukan/i.test(combined) || idx % 9 === 1) {
     const half = Math.ceil(safePoints.length / 2);
     const leftItems = safePoints.slice(0, half).length > 0 ? safePoints.slice(0, half) : [isMalay ? 'Aspek tradisi / cabaran' : 'Conventional challenge'];
     const rightItems = safePoints.slice(half).length > 0 ? safePoints.slice(half) : [isMalay ? 'Solusi / Amalan terbaik' : 'Best practice solution'];
@@ -475,7 +477,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 5. Radial Ecosystem (Central Hub & Satellites)
-  if (/ekosistem|hab|pusat|satelit|jejaring|integrasi|hub|network|hubungan/i.test(combined) || idx % 11 === 4) {
+  if (/ekosistem|hab|pusat|satelit|jejaring|integrasi|hub|network|hubungan/i.test(combined) || idx % 9 === 2) {
     const satellites = safePoints.slice(0, 4).map((pt, satIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
@@ -496,7 +498,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 6. Timeline Roadmap (Phased Milestone Roadmap)
-  if (/garis masa|hala tuju|milestone|road\s*map|fasa|jangka\s*masa|timeline|sejarah|kronologi/i.test(combined) || idx % 11 === 5) {
+  if (/garis masa|hala tuju|milestone|road\s*map|fasa|jangka\s*masa|timeline|sejarah|kronologi/i.test(combined) || idx % 9 === 3) {
     const phases = safePoints.slice(0, 4).map((pt, phIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
@@ -512,7 +514,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 7. Quadrant Matrix (2x2 Decision / Strategic Matrix)
-  if (/kuadran|quadrant|matriks|matrix|keutamaan|swot|keputusan|priority/i.test(combined) || idx % 11 === 6) {
+  if (/kuadran|quadrant|matriks|matrix|keutamaan|swot|keputusan|priority/i.test(combined) || idx % 9 === 4) {
     return {
       infographicType: 'QUADRANT_MATRIX',
       meta: {
@@ -544,7 +546,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 8. Pyramid Hierarchy (Layered Strategic Pyramid)
-  if (/piramid|pyramid|hierarki|hierarchy|aras|lapisan|tier|struktur|level/i.test(combined) || idx % 11 === 7) {
+  if (/piramid|pyramid|hierarki|hierarchy|aras|lapisan|tier|struktur|level/i.test(combined) || idx % 9 === 5) {
     return {
       infographicType: 'PYRAMID_HIERARCHY',
       meta: {
@@ -571,7 +573,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 9. Circular Cycle (Continuous Loop)
-  if (/kitaran|cycle|gelung|loop|pdca|pusingan|berterusan|continuous/i.test(combined) || idx % 11 === 8) {
+  if (/kitaran|cycle|gelung|loop|pdca|pusingan|berterusan|continuous/i.test(combined) || idx % 9 === 6) {
     const stages = safePoints.slice(0, 4).map((pt, stIdx) => {
       const parts = pt.split(/[:–-]/);
       return {
@@ -587,7 +589,7 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
   }
 
   // 10. Case Study Showcase (Challenge -> Solution -> Impact)
-  if (/kajian kes|case study|impak|masalah|solusi|bukti|hasil|pembuktian/i.test(combined) || idx % 11 === 9) {
+  if (/kajian kes|case study|impak|masalah|solusi|bukti|hasil|pembuktian/i.test(combined) || idx % 9 === 7) {
     return {
       infographicType: 'CASE_STUDY_SHOWCASE',
       meta: {
@@ -599,13 +601,19 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
           solutionDesc: safePoints[1] || (isMalay ? `Kaedah penyelesaian berkesan bagi ${title}.` : `Effective solutions applied for ${title}.`),
           result: isMalay ? 'Hasil & Impak Kejayaan' : 'Verified Positive Result',
           resultDesc: safePoints[2] || (isMalay ? `Kefahaman mendalam dan keberhasilan positif.` : `Positive outcome achieved.`),
-          impactMetric: '100% Berjaya'
+          impactMetric: isMalay ? 'Impak Diperakui' : 'Verified Impact'
         }
       }
     };
   }
 
-  // 11. Asymmetric Modern Bento Grid (Default Master Highlight + Dual Metrics + Takeaway)
+  // 11. Asymmetric Modern Bento Grid (Zero Fake Percentages: Uses Real Point Text & Status Badges)
+  const extractRealNumOrText = (text: string | undefined, defaultVal: string) => {
+    if (!text) return defaultVal;
+    const match = text.match(/(\d+(?:\.\d+)?%?|\$\d+|\b\d+x\b)/);
+    return match ? match[1] : defaultVal;
+  };
+
   return {
     infographicType: 'BENTO_GRID',
     meta: {
@@ -614,20 +622,21 @@ function detectArchetypeFromContent(title: string, points: string[], idx: number
         spotlightTitle: title,
         spotlightDesc: safePoints[0],
         metric1: {
-          label: safePoints[1] ? (safePoints[1].length > 25 ? safePoints[1].slice(0, 25) + '...' : safePoints[1]) : (isMalay ? 'Standard Kualiti' : 'Standard Quality'),
-          value: '100%',
-          badge: isMalay ? 'Diperakui' : 'Verified'
+          label: safePoints[1] ? (safePoints[1].length > 25 ? safePoints[1].slice(0, 25) + '...' : safePoints[1]) : (isMalay ? 'Prinsip Teras' : 'Core Focus'),
+          value: extractRealNumOrText(safePoints[1], isMalay ? 'Teras' : 'Core'),
+          badge: isMalay ? 'Standard' : 'Benchmark'
         },
         metric2: {
-          label: safePoints[2] ? (safePoints[2].length > 25 ? safePoints[2].slice(0, 25) + '...' : safePoints[2]) : (isMalay ? 'Keberhasilan' : 'Impact Rate'),
-          value: 'Tinggi',
-          badge: isMalay ? 'Optimum' : 'Optimal'
+          label: safePoints[2] ? (safePoints[2].length > 25 ? safePoints[2].slice(0, 25) + '...' : safePoints[2]) : (isMalay ? 'Keberhasilan' : 'Impact Area'),
+          value: extractRealNumOrText(safePoints[2], isMalay ? 'Utama' : 'Key'),
+          badge: isMalay ? 'Fokus' : 'Focus'
         },
         takeaway: safePoints[safePoints.length - 1]
       }
     }
   };
 }
+
 
 /**
  * Generates 30 Infographic Slide Outlines STRICTLY derived from user input (PPT slides or Reference Text)
@@ -937,120 +946,143 @@ function generateDynamicMcqQuestions(outlines: OutlineItem[], isMalay: boolean, 
 }
 
 /**
- * Comprehensive Generator that builds the complete 45 slides (30 Infographics + 15 MCQs)
- * strictly derived from the user's uploaded presentation / custom input!
+ * Generates the full 45-slide curriculum draft (30 Infographics + 15 MCQs)
+ * in pure structured text for user review and approval before generating image/video prompts.
  */
-export function generateCurated45Slides(config: SetupConfig): SlideData[] {
+export function generateDraftCurriculum(config: SetupConfig): DraftSlideItem[] {
   const isMalay = config.outputLanguage === 'Bahasa Melayu Baku Malaysia';
-  const scheme = OFFICIAL_COLOR_SCHEMES.find(s => s.id === config.colorSchemeId) || OFFICIAL_COLOR_SCHEMES[0];
-
-  // Extract 30 structured outlines from the uploaded PPT or user input
   const infographTopics = extractAndGenerate30Infographics(config, isMalay);
   const mcqQuestions = generateDynamicMcqQuestions(infographTopics, isMalay, config.topic);
 
-  const slides: SlideData[] = [];
+  const drafts: DraftSlideItem[] = [];
 
-  // Generate Slaid 1 to 30: Infografik Utama
+  // 1 to 30: Infographics Draft
   for (let i = 1; i <= 30; i++) {
     const info = infographTopics[i - 1];
-    const position = getSlideCharacterPosition(i);
-    const ethnicity = getSlideEthnicity(i);
-    const imageSize = getSlideImageSize(i);
-
-    const script30s = isMalay
-      ? `Selamat datang ke Slaid ${i}. Dalam bahagian '${info.title}', kita meneliti intipati utama di mana ${info.summary} Antara fokus utamanya ialah ${info.points.slice(0, 2).join(', ')}. Melalui pelaksanaan berstruktur ini, objektif dapat dicapai secara mampan dan berkesan.`
-      : `Welcome to Slide ${i}. In this segment on '${info.title}', we analyze the core pillar where ${info.summary} Key focus areas include ${info.points.slice(0, 2).join(', ')}. By applying these structured principles, we achieve sustainable excellence.`;
-
-    const script10s = isMalay
-      ? `Mari kita teliti intipati utama ${info.title} dan peranannya dalam kejayaan jangka panjang.`
-      : `Let's explore the strategic impact of ${info.title} on achieving sustainable excellence.`;
-
-    const script5s = isMalay
-      ? `Kunci utama: ${info.coreHighlight}.`
-      : `Core takeaway: ${info.coreHighlight}.`;
-
-    const typography = isMalay
-      ? 'Tipografi sans-serif moden, tajuk cerun tebal dengan kejelasan sempurna tanpa kesalahan ejaan'
-      : 'Modern bold gradient typography, high contrast crisp rendering with flawless exact spelling';
-
-    const prompts = buildOfficialPrompts({
+    drafts.push({
       slideNumber: i,
-      title: info.title,
-      config,
-      pointsOrContent: info.points.join(' | '),
       isMcq: false,
+      title: info.title,
+      summary: info.summary,
+      points: [...info.points],
       infographicType: info.infographicType,
-      infographicMeta: info.meta,
-      script30s,
-      scriptNarration10s: script10s,
-      scriptConcise5s: script5s
+      meta: info.meta
     });
-
-    const slideObj: SlideData = {
-      slideNumber: i,
-      isMcq: false,
-      title: info.title,
-      characterPosition: position,
-      colorSchemeName: scheme.name,
-      colorSchemeHex: scheme.bgHex,
-      accentHexes: scheme.accentHexes,
-      imageSize,
-      ethnicity,
-      typography,
-      infographicType: info.infographicType,
-      infographicPoints: info.points,
-      infographicMeta: info.meta,
-      promptNanoBanana2: prompts.promptNanoBanana2,
-      promptVeo10s: prompts.promptVeo10s,
-      promptVeo5s: prompts.promptVeo5s,
-      scriptAvatar30s: script30s,
-      fullFormattedBlock: ''
-    };
-    slideObj.fullFormattedBlock = formatSlideFullBlock(slideObj);
-    slides.push(slideObj);
   }
 
-  // Generate Slaid 31 to 45: Soalan MCQ (15 Questions derived from uploaded slides)
+  // 31 to 45: MCQ Draft
   for (let j = 1; j <= 15; j++) {
     const slideNumber = 30 + j;
     const mcq = mcqQuestions[j - 1];
-    const position = getSlideCharacterPosition(slideNumber);
-    const ethnicity = getSlideEthnicity(slideNumber);
-    const imageSize = getSlideImageSize(slideNumber);
-    const title = `${isMalay ? 'Soalan MCQ' : 'MCQ Question'} ${j}: ${infographTopics[(j * 2 - 2) % infographTopics.length]?.title || config.topic}`;
+    const sourceTopic = infographTopics[(j * 2 - 2) % infographTopics.length]?.title || config.topic;
+    const title = `${isMalay ? 'Uji Minda Soalan' : 'Knowledge Check Question'} ${j}: ${sourceTopic}`;
 
-    const script30s = isMalay
-      ? `Slaid ${slideNumber}: Uji Minda Soalan ${j}. Soalannya: ${mcq.question}. Mari kita semak pilihan jawapan A, B, C, dan D. Jawapan yang paling tepat adalah Pilihan ${mcq.correctOption} (${mcq.options.find(o => o.label === mcq.correctOption)?.text}) kerana ${mcq.explanation}. Tahniah kepada anda yang menjawab dengan tepat!`
-      : `Slide ${slideNumber}: Knowledge Check Question ${j}. The question asks: ${mcq.question}. Let us review options A, B, C, and D. The correct answer is Option ${mcq.correctOption} (${mcq.options.find(o => o.label === mcq.correctOption)?.text}) because ${mcq.explanation}. Great job to everyone who got it right!`;
+    drafts.push({
+      slideNumber,
+      isMcq: true,
+      title,
+      summary: mcq.question,
+      points: mcq.options.map(opt => `[${opt.label}] ${opt.text}`),
+      mcqDetails: mcq
+    });
+  }
 
-    const script10s = isMalay
-      ? `Uji minda soalan ${j}: ${mcq.question}. Fikirkan jawapan sebelum masa tamat.`
-      : `Knowledge check ${j}: ${mcq.question}. Identify the best option.`;
+  return drafts;
+}
 
-    const script5s = isMalay
-      ? `Jawapan tepat soalan ${j} ialah Pilihan ${mcq.correctOption}.`
-      : `The correct answer for question ${j} is Option ${mcq.correctOption}.`;
+/**
+ * Comprehensive Generator that builds the complete 45 slides (30 Infographics + 15 MCQs).
+ * If approvedDrafts is provided, it strictly generates prompts from the user-reviewed/approved text!
+ */
+export function generateCurated45Slides(config: SetupConfig, approvedDrafts?: DraftSlideItem[]): SlideData[] {
+  const isMalay = config.outputLanguage === 'Bahasa Melayu Baku Malaysia';
+  const scheme = OFFICIAL_COLOR_SCHEMES.find(s => s.id === config.colorSchemeId) || OFFICIAL_COLOR_SCHEMES[0];
 
-    const typography = isMalay
-      ? 'Tipografi kad soalan kemas, pilihan A,B,C,D berasingan dengan ejaan tepat tanpa sebarang petunjuk jawapan'
-      : 'Crisp quiz layout, distinct A, B, C, D cards with zero error spelling and clean neutral choice badges';
+  // Use provided approved drafts or generate fresh drafts
+  const drafts = (approvedDrafts && approvedDrafts.length === 45)
+    ? approvedDrafts
+    : generateDraftCurriculum(config);
+
+  const slides: SlideData[] = [];
+
+  for (let i = 1; i <= 45; i++) {
+    const draft = drafts[i - 1] || drafts[0];
+    const position = getSlideCharacterPosition(i);
+    const ethnicity = getSlideEthnicity(i);
+    const imageSize = getSlideImageSize(i);
+    const isMcq = draft.isMcq;
+
+    let script30s = '';
+    let script10s = '';
+    let script5s = '';
+    let typography = '';
+
+    if (!isMcq) {
+      const pointStr = draft.points.slice(0, 3).join(', ');
+      script30s = isMalay
+        ? `Selamat datang ke Slaid ${i}. Dalam bahagian '${draft.title}', kita meneliti intipati utama di mana ${draft.summary} Antara fokus utamanya ialah ${pointStr}. Melalui pelaksanaan berstruktur ini, objektif dapat dicapai secara mampan dan berkesan.`
+        : `Welcome to Slide ${i}. In this segment on '${draft.title}', we analyze the core pillar where ${draft.summary} Key focus areas include ${pointStr}. By applying these structured principles, we achieve sustainable excellence.`;
+
+      script10s = isMalay
+        ? `Mari kita teliti intipati utama ${draft.title} dan peranannya dalam kejayaan jangka panjang.`
+        : `Let's explore the strategic impact of ${draft.title} on achieving sustainable excellence.`;
+
+      script5s = isMalay
+        ? `Kunci utama: ${draft.points[0] || draft.summary}.`
+        : `Core takeaway: ${draft.points[0] || draft.summary}.`;
+
+      typography = isMalay
+        ? 'Tipografi sans-serif moden, tajuk cerun tebal dengan kejelasan sempurna tanpa kesalahan ejaan'
+        : 'Modern bold gradient typography, high contrast crisp rendering with flawless exact spelling';
+    } else {
+      const mcq = draft.mcqDetails || {
+        question: draft.summary,
+        options: [
+          { label: 'A', text: draft.points[0] || 'Jawapan Tepat' },
+          { label: 'B', text: draft.points[1] || 'Pilihan Lain' },
+          { label: 'C', text: draft.points[2] || 'Pilihan Tambahan' },
+          { label: 'D', text: draft.points[3] || 'Pilihan Alternatif' },
+        ],
+        correctOption: 'A',
+        explanation: 'Pilihan ini merujuk kepada pemahaman konsep utama slaid.'
+      };
+
+      const qNum = i - 30;
+      script30s = isMalay
+        ? `Slaid ${i}: Uji Minda Soalan ${qNum}. Soalannya: ${mcq.question}. Mari kita semak pilihan jawapan A, B, C, dan D. Jawapan yang paling tepat adalah Pilihan ${mcq.correctOption} (${mcq.options.find(o => o.label === mcq.correctOption)?.text || ''}) kerana ${mcq.explanation}. Tahniah kepada anda yang menjawab dengan tepat!`
+        : `Slide ${i}: Knowledge Check Question ${qNum}. The question asks: ${mcq.question}. Let us review options A, B, C, and D. The correct answer is Option ${mcq.correctOption} (${mcq.options.find(o => o.label === mcq.correctOption)?.text || ''}) because ${mcq.explanation}. Great job to everyone who got it right!`;
+
+      script10s = isMalay
+        ? `Uji minda soalan ${qNum}: ${mcq.question}. Fikirkan jawapan sebelum masa tamat.`
+        : `Knowledge check ${qNum}: ${mcq.question}. Identify the best option.`;
+
+      script5s = isMalay
+        ? `Jawapan tepat soalan ${qNum} ialah Pilihan ${mcq.correctOption}.`
+        : `The correct answer for question ${qNum} is Option ${mcq.correctOption}.`;
+
+      typography = isMalay
+        ? 'Tipografi kad soalan kemas, pilihan A,B,C,D berasingan dengan ejaan tepat tanpa sebarang petunjuk jawapan'
+        : 'Crisp quiz layout, distinct A, B, C, D cards with zero error spelling and clean neutral choice badges';
+    }
 
     const prompts = buildOfficialPrompts({
-      slideNumber,
-      title,
+      slideNumber: i,
+      title: draft.title,
       config,
-      pointsOrContent: mcq.question,
-      isMcq: true,
-      mcqData: mcq,
+      pointsOrContent: isMcq ? (draft.mcqDetails?.question || draft.summary) : draft.points.join(' | '),
+      isMcq,
+      infographicType: draft.infographicType,
+      infographicMeta: draft.meta,
+      mcqData: draft.mcqDetails,
       script30s,
       scriptNarration10s: script10s,
       scriptConcise5s: script5s
     });
 
     const slideObj: SlideData = {
-      slideNumber,
-      isMcq: true,
-      title,
+      slideNumber: i,
+      isMcq,
+      title: draft.title,
       characterPosition: position,
       colorSchemeName: scheme.name,
       colorSchemeHex: scheme.bgHex,
@@ -1058,7 +1090,10 @@ export function generateCurated45Slides(config: SetupConfig): SlideData[] {
       imageSize,
       ethnicity,
       typography,
-      mcqDetails: mcq,
+      infographicType: draft.infographicType,
+      infographicPoints: draft.points,
+      infographicMeta: draft.meta,
+      mcqDetails: draft.mcqDetails,
       promptNanoBanana2: prompts.promptNanoBanana2,
       promptVeo10s: prompts.promptVeo10s,
       promptVeo5s: prompts.promptVeo5s,
@@ -1071,3 +1106,4 @@ export function generateCurated45Slides(config: SetupConfig): SlideData[] {
 
   return slides;
 }
+

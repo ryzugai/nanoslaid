@@ -679,14 +679,14 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
         <div className="text-xs text-slate-400 text-center sm:text-left">
           {config.uploadedPpt ? (
             <span>
-              Slaid akan dijana berasaskan kandungan fail <strong className="text-white">{config.uploadedPpt.fileName}</strong> ({config.uploadedPpt.slideCount} slaid).
+              Kandungan diekstrak tulen dari fail <strong className="text-white">{config.uploadedPpt.fileName}</strong> ({config.uploadedPpt.slideCount} slaid). Anda akan menyemak draf 45 slaid terlebih dahulu.
             </span>
           ) : config.topic.trim() ? (
             <span>
-              Slaid akan dijana berasaskan tajuk <strong className="text-white">{config.topic.trim()}</strong>.
+              Draf 45 slaid akan diekstrak berdasarkan tajuk <strong className="text-white">{config.topic.trim()}</strong>. Anda boleh semak &amp; luluskan draf sebelum jana teks prompt.
             </span>
           ) : (
-            <span>Sila muat naik fail PowerPoint (.pptx) atau masukkan tajuk persembahan.</span>
+            <span>Sila muat naik fail PowerPoint (.pptx) atau masukkan kata kunci persembahan.</span>
           )}
         </div>
 
@@ -699,14 +699,15 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
           {isGenerating ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin text-[#091322]" />
-              <span>Sedang Menjana Prompt...</span>
+              <span>Sedang Mengekstrak Draf 45 Slaid...</span>
             </>
           ) : (
             <>
+              <FileText className="w-4 h-4" />
               <span>
                 {hasExistingSlides
-                  ? 'Kemas Kini 30 Teks Prompt Slaid'
-                  : 'Jana 30 Teks Prompt Slaid Lengkap'}
+                  ? 'Semak & Kemas Kini Draf 45 Slaid'
+                  : 'Semak & Jana Draf Kandungan 45 Slaid'}
               </span>
               <ArrowRight className="w-4 h-4" />
             </>
