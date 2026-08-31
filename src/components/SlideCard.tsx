@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SlideData, SetupConfig, CharacterSheetData, InfographicArchetype } from '../types';
 import { SlideVisualMockup } from './SlideVisualMockup';
 import { generateNanoBanana2Image, downloadImage } from '../utils/imageRenderer';
+import { exportSingleSlideToPptx } from '../utils/pptxExporter';
 import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
 import {
   Copy,
@@ -24,7 +25,8 @@ import {
   ExternalLink,
   User,
   Shuffle,
-  Layers
+  Layers,
+  Presentation
 } from 'lucide-react';
 
 interface SlideCardProps {
