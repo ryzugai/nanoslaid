@@ -9,6 +9,7 @@ import { MCQQuizModal } from './components/MCQQuizModal';
 import { ExportModal } from './components/ExportModal';
 import { TeleprompterModal } from './components/TeleprompterModal';
 import { DraftReviewModal } from './components/DraftReviewModal';
+import { AvatarGenerationModal } from './components/AvatarGenerationModal';
 import {
   Search,
   SlidersHorizontal,
@@ -51,9 +52,10 @@ export default function App() {
   // Single settings panel toggle state on main page
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
 
-  // Modals for Export, Quiz, Teleprompter
+  // Modals for Export, Quiz, Teleprompter, Avatar
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [teleprompterSlide, setTeleprompterSlide] = useState<SlideData | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'infographic' | 'mcq' | 'left' | 'right' | 'withImage'>('all');
@@ -287,6 +289,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
               config={config}
               onChangeConfig={setConfig}
               onGenerate={handleStartDraftReview}
+              onOpenAvatarModal={() => setIsAvatarModalOpen(true)}
               isGenerating={isGenerating}
               hasExistingSlides={false}
             />
@@ -305,6 +308,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                   config={config}
                   onChangeConfig={setConfig}
                   onGenerate={handleStartDraftReview}
+                  onOpenAvatarModal={() => setIsAvatarModalOpen(true)}
                   isGenerating={isGenerating}
                   hasExistingSlides={true}
                   onClosePanel={() => setShowSettingsPanel(false)}
@@ -542,6 +546,20 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
         onApproveAndGenerate={handleApproveDraft}
         onClose={() => setIsDraftModalOpen(false)}
         isGeneratingPrompts={isGenerating}
+      />
+
+      {/* Avatar & 4 Presentation Poses Generation Modal */}
+      <AvatarGenerationModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        config={config}
+        onUpdateCharacterSheet={(updatedSheet) => {
+          setConfig((prev) => ({
+            ...prev,
+            characterSheet: updatedSheet,
+            nametagText: updatedSheet.characterName || prev.nametagText,
+          }));
+        }}
       />
     </div>
   );

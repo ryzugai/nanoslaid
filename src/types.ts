@@ -8,6 +8,14 @@ export interface ColorScheme {
   description: string;
 }
 
+export interface CharacterPoseVariation {
+  poseId: 'pose_welcome' | 'pose_pointing' | 'pose_tablet' | 'pose_quiz';
+  label: string;
+  description: string;
+  imageUrl: string;
+  isCustomGenerated?: boolean;
+}
+
 export interface CharacterSheetData {
   fileName: string;
   imageUrl: string; // Base64 / blob data URL
@@ -15,6 +23,8 @@ export interface CharacterSheetData {
   specs: string; // Detailed visual descriptors (hijab style, glasses, suit, facial expression)
   customCostume?: string;
   gender?: 'Lelaki' | 'Wanita';
+  poses?: CharacterPoseVariation[]; // 4 distinct presentation poses generated from character sheet
+  selectedPoseId?: string;
 }
 
 export interface UploadedPptData {

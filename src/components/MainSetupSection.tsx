@@ -29,6 +29,7 @@ interface MainSetupSectionProps {
   config: SetupConfig;
   onChangeConfig: (newConfig: SetupConfig) => void;
   onGenerate: (overrideConfig?: SetupConfig) => void;
+  onOpenAvatarModal?: () => void;
   isGenerating: boolean;
   hasExistingSlides: boolean;
   onClosePanel?: () => void;
@@ -48,6 +49,7 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
   config,
   onChangeConfig,
   onGenerate,
+  onOpenAvatarModal,
   isGenerating,
   hasExistingSlides,
   onClosePanel,
@@ -504,12 +506,23 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
 
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-1.5">
+                    {onOpenAvatarModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenAvatarModal}
+                        className="px-3 py-1.5 rounded-xl border border-[#06B6D4]/50 bg-gradient-to-r from-[#06B6D4]/20 to-[#3B82F6]/20 hover:from-[#06B6D4]/30 hover:to-[#3B82F6]/30 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-[#06B6D4]" />
+                        <span>{config.characterSheet?.imageUrl ? 'Urus / Jana Semula 4 Gaya Watak' : 'Jana Watak (4 Gaya) & Buang BG'}</span>
+                      </button>
+                    )}
+
                     <label className="px-3 py-1.5 rounded-xl border border-white/15 hover:border-[#06B6D4]/50 bg-[#0B1729] text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer w-fit transition-all">
                       <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
                       <span>
                         {config.characterSheet?.imageUrl
-                          ? 'Tukar Character Sheet'
-                          : 'Upload Character Sheet'}
+                          ? 'Tukar Sheet'
+                          : 'Upload Sheet'}
                       </span>
                       <input
                         type="file"
@@ -537,6 +550,25 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* 4 Poses Status Badge */}
+              {config.characterSheet?.poses && config.characterSheet.poses.length > 0 && (
+                <div className="p-2.5 rounded-xl border border-[#06B6D4]/30 bg-[#06B6D4]/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[11px] font-bold text-slate-200">
+                      4 Gaya Pembentangan Siap Terpasang
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenAvatarModal}
+                    className="text-[10px] text-[#06B6D4] font-bold hover:underline"
+                  >
+                    Semak Poses
+                  </button>
+                </div>
+              )}
 
               {/* Character Name & Nametag */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">

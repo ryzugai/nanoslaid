@@ -218,11 +218,16 @@ export function buildOfficialPrompts(params: {
 
   const dynamicPose = getPresenterDynamicExplainingPose(params.slideNumber, params.isMcq);
 
+  // Map slide number to one of the 4 presentation poses
+  const poseIndex = params.isMcq ? 3 : ((params.slideNumber - 1) % 4);
+  const activePoseVariation = params.config.characterSheet?.poses?.[poseIndex];
+  const poseStyleNote = activePoseVariation ? ` [GAYA PEMBENTANGAN ${poseIndex + 1}: ${activePoseVariation.label} - ${activePoseVariation.description}]` : '';
+
   const characterSheetPrompt = params.config.characterSheet?.imageUrl
-    ? `preserving 100% likeness, facial structure, eye shape, hairstyle, glasses, and skin tone from the reference Character Sheet of '${charName}', rendered in ${params.config.presenterStyle}`
+    ? `preserving 100% likeness, facial structure, eye shape, hairstyle, glasses, and skin tone from the reference Character Sheet of '${charName}', rendered in ${params.config.presenterStyle}${poseStyleNote}`
     : params.config.characterSheet?.specs
-    ? `character identity '${charName}' (${params.config.characterSheet.specs}${params.config.characterSheet.customCostume ? `, Outfit: ${params.config.characterSheet.customCostume}` : ''}) in ${params.config.presenterStyle}`
-    : `a charismatic 3D animated presenter in ${params.config.presenterStyle}`;
+    ? `character identity '${charName}' (${params.config.characterSheet.specs}${params.config.characterSheet.customCostume ? `, Outfit: ${params.config.characterSheet.customCostume}` : ''}) in ${params.config.presenterStyle}${poseStyleNote}`
+    : `a charismatic 3D animated presenter in ${params.config.presenterStyle}${poseStyleNote}`;
 
   // Build high-craft, non-list, eye-catching visual layout descriptions
   let visualLayoutDesc = '';
@@ -874,15 +879,129 @@ export function extractAndGenerate30Infographics(config: SetupConfig, isMalay: b
     const relatedSubKeyword = secondaryKeywords[i % Math.max(1, secondaryKeywords.length)] || primaryKeyword;
     const fullTitle = `${dim.title}`;
 
-    const points = isMalay ? [
-      `Menetapkan garis panduan komprehensif bagi ${dim.focus.toLowerCase()} dalam kerangka ${relatedSubKeyword}.`,
-      `Melaksanakan pemantauan berstruktur berasaskan bukti dan data operasi yang disahkan.`,
-      `Memastikan pematuhan standard kecemerlangan bagi memaksimumkan impak positif secara mampan.`
-    ] : [
-      `Establishing comprehensive operational guidelines for ${dim.focus.toLowerCase()} within ${relatedSubKeyword}.`,
-      `Executing structured evidence-based tracking backed by verified performance data.`,
-      `Ensuring strict compliance with top-tier benchmarks to achieve sustainable, measurable impact.`
-    ];
+    let points: string[] = [];
+    if (isMalay) {
+      switch (i) {
+        case 0:
+          points = [
+            `Mendefinisikan skop komprehensif ${primaryKeyword} merangkumi objektif teras, sempadan operasi, dan jangkaan hasil.`,
+            `Menilai integrasi asas antara ${primaryKeyword} dan keutamaan strategik organisasi.`,
+            `Menetapkan taksonomi dan terminologi standard bagi memastikan keselarasan komunikasi semua pihak.`
+          ];
+          break;
+        case 1:
+          points = [
+            `Menganalisis jurang prestasi sedia ada dan justifikasi keperluan mendesak bagi ${primaryKeyword}.`,
+            `Mengenal pasti cabaran pasaran semasa serta peluang impak tinggi yang boleh dimanfaatkan.`,
+            `Membina asas rasional pelaburan berasaskan data empirikal dan penanda aras industri.`
+          ];
+          break;
+        case 2:
+          points = [
+            `Menetapkan sasaran KPI kuantitatif (kecekapan proses, pengurangan kos, kepuasan pemegang taruh).`,
+            `Menyusun matlamat jangka pendek (3 bulan) dan visi strategik jangka panjang (3 tahun).`,
+            `Mewujudkan sistem penjejakan pencapaian masa nyata bagi setiap sasaran keberhasilan.`
+          ];
+          break;
+        case 3:
+          points = [
+            `Menggariskan 4 prinsip operasi utama yang mendasari kerangka kerja ${primaryKeyword}.`,
+            `Menghubungkan teori konseptual dengan amalan terbaik pelaksanaan di peringkat lapangan.`,
+            `Memastikan pematuhan falsafah kerja berintegriti, tangkas, dan berorientasikan hasil.`
+          ];
+          break;
+        case 4:
+          points = [
+            `Memetakan seni bina ekosistem operasi merangkumi modal insan, teknologi, dan aliran proses.`,
+            `Mengenal pasti hubungan simbiotik antara komponen teras bagi mengelakkan wujudnya silo organisasi.`,
+            `Menstruktur lapisan sokongan infrastruktur bagi kelancaran kitaran operasi harian.`
+          ];
+          break;
+        case 5:
+          points = [
+            `Fasa 1: Perancangan rapi, pemetaan sumber, dan persediaan infrastruktur teras.`,
+            `Fasa 2: Pelaksanaan berperingkat dengan ujian rintis (pilot test) terkawal.`,
+            `Fasa 3: Peluncuran penuh merentas bahagian disusuli pemantauan kestabilan sistem.`
+          ];
+          break;
+        case 6:
+          points = [
+            `Menubuhkan struktur tadbir urus dan jawatankuasa pemandu yang berwibawa.`,
+            `Menguatkuasakan pematuhan standard operasi dan audit ketelusan berkala.`,
+            `Memastikan kebertanggungjawaban jelas pada setiap peringkat hierarki pengurusan.`
+          ];
+          break;
+        case 7:
+          points = [
+            `Mengenal pasti risiko operasi, keselamatan data, dan ketidaktentuan pasaran.`,
+            `Menilai tahap kebarangkalian dan impak menggunakan matriks keutamaan 2x2.`,
+            `Merangka pelan mitigasi proaktif dan prosedur tindak balas kecemasan.`
+          ];
+          break;
+        case 8:
+          points = [
+            `Meneliti senario kajian kes sebenar dan faktor penyumbang kejayaan utama.`,
+            `Menganalisis cabaran getir yang dihadapi semasa pelaksanaan dan formula penyelesaiannya.`,
+            `Mengekstrak pengajaran kritikal (lessons learned) untuk diadaptasi ke dalam modul semasa.`
+          ];
+          break;
+        case 9:
+          points = [
+            `Membandingkan had kekangan pendekatan konvensional berbanding kecekapan kaedah moden.`,
+            `Menganalisis penjimatan masa dan kos sehingga 40% melalui automasi dan integrasi digital.`,
+            `Menilai kebolehsuaian kaedah baharu terhadap perubahan dinamik masa hadapan.`
+          ];
+          break;
+        case 10:
+          points = [
+            `Membangunkan papan pemuka eksekutif berasaskan metrik data masa nyata.`,
+            `Menetapkan petunjuk prestasi utama (KPI) individu, pasukan, dan organisasi.`,
+            `Mengintegrasikan analitik ramalan bagi mengesan anomali prestasi lebih awal.`
+          ];
+          break;
+        case 11:
+          points = [
+            `Merangka program latihan kemahiran masa hadapan (upskilling & reskilling) berkala.`,
+            `Membina laluan kerjaya dan pemerkasaan kepimpinan generasi baharu.`,
+            `Mewujudkan persekitaran pembelajaran berterusan dan budaya perkongsian ilmu.`
+          ];
+          break;
+        case 12:
+          points = [
+            `Mengintegrasikan algoritma AI dan automasi robotik proses (RPA) ke dalam aliran kerja.`,
+            `Memastikan saling kendali (interoperability) antara platform legasi dan sistem awan moden.`,
+            `Mengurangkan ralat manual dan meningkatkan ketepatan pemprosesan data.`
+          ];
+          break;
+        case 13:
+          points = [
+            `Bulan 1-3: Persediaan prasarana, kelulusan polisi, dan penstrukturan pasukan teras.`,
+            `Bulan 4-6: Pelaksanaan rintis fasa awal dan penilaian maklum balas pengguna.`,
+            `Bulan 7-12: Penskalaan penuh operasi dan penyerahan dokumentasi piawai.`
+          ];
+          break;
+        case 14:
+          points = [
+            `Mengoptimumkan agihan belanjawan mengikut keutamaan modul berimpak tinggi.`,
+            `Mengurangkan pembaziran sumber operasi (lean management) merentas unit.`,
+            `Meningkatkan pulangan nilai perbelanjaan bagi setiap ringgit yang dilaburkan.`
+          ];
+          break;
+        default:
+          points = [
+            `Menetapkan strategi khusus bagi memperkasakan ${dim.focus.toLowerCase()} dalam konteks ${relatedSubKeyword}.`,
+            `Melaksanakan mekanisme pemantauan berstruktur berasaskan data dan bukti operasi sah.`,
+            `Memastikan jaminan kualiti konsisten bagi mencapai kecemerlangan jangka panjang.`
+          ];
+          break;
+      }
+    } else {
+      points = [
+        `Establishing comprehensive operational directives for ${dim.focus.toLowerCase()} within ${relatedSubKeyword}.`,
+        `Executing structured milestone tracking backed by verified empirical metrics.`,
+        `Ensuring high-compliance benchmarks to maximize positive, scalable outcomes.`
+      ];
+    }
 
     const { infographicType, meta } = detectArchetypeFromContent(fullTitle, points, i, isMalay);
 

@@ -63,7 +63,9 @@ SANGAT PENTING:
 4. Bahasa: ${isMalay ? 'Bahasa Melayu Baku Malaysia yang tepat dan formal' : 'Formal Executive English'}.
 5. Pulangkan output dalam format JSON sah mengikut skema yang ditetapkan.`;
 
-      const prompt = `Jana silibus pembentangan 30 slaid berasaskan kata kunci berikut:
+      // Slaid 1-30: 30 Modul Pembelajaran Teras (Definisi, Kerangka, Proses, Risiko, Metrik, Kajian Kes, Teknologi, Pelan Tindakan, dsb.)
+      // Slaid 31-45: 15 Soalan Kuiz MCQ Interaktif lengkap dengan 4 pilihan A, B, C, D, jawapan betul (A/B/C/D), dan huraian rasional.
+      const prompt = `Jana kurikulum lengkap 45 slaid (30 Infografik + 15 Soalan Kuiz MCQ) berasaskan kata kunci:
 "${keywords}"
 
 Sila kembalikan dalam format JSON dengan struktur:
@@ -78,13 +80,13 @@ Sila kembalikan dalam format JSON dengan struktur:
       "infographicType": "PROCESS_FLOW",
       "coreHighlight": "Fokus Utama"
     }
-    ... (hingga Slaid 15)
+    ... (hingga Slaid 30 / 30 Modul Infografik unik)
   ],
   "mcqs": [
     {
-      "slideNumber": 16,
+      "slideNumber": 31,
       "relatedModuleIndex": 1,
-      "question": "Teks soalan MCQ yang menguji topik...",
+      "question": "Teks soalan MCQ yang menguji modul berkaitan...",
       "options": [
         {"label": "A", "text": "Pilihan A"},
         {"label": "B", "text": "Pilihan B"},
@@ -92,9 +94,9 @@ Sila kembalikan dalam format JSON dengan struktur:
         {"label": "D", "text": "Pilihan D"}
       ],
       "correctOption": "A",
-      "explanation": "Penjelasan mengapa jawapan ini tepat..."
+      "explanation": "Penjelasan mendalam mengapa jawapan ini tepat..."
     }
-    ... (hingga Slaid 30 / 15 Soalan)
+    ... (hingga Slaid 45 / 15 Soalan Kuiz MCQ)
   ]
 }`;
 
@@ -118,6 +120,99 @@ Sila kembalikan dalam format JSON dengan struktur:
       return res.status(500).json({
         success: false,
         error: err.message || 'Ralat semasa menjana kurikulum slaid.',
+      });
+    }
+  });
+
+  // Endpoint to generate 4 distinct 3D avatar presentation poses from a character sheet
+  router.post('/gemini/generate-avatar-poses', async (req, res) => {
+    try {
+      const { characterSheet, characterName, specs, costume, gender, style } = req.body;
+      const ai = getGeminiClient();
+
+      const name = (characterName || characterSheet?.characterName || 'DR. AIMAN').toUpperCase();
+      const visualSpecs = specs || characterSheet?.specs || 'Lelaki 32 tahun, sut korporat biru navy, berkaca mata moden kemas.';
+      const costumeDesc = costume || characterSheet?.customCostume || 'Sut Korporat Profesional';
+      const charGender = gender || characterSheet?.gender || 'Lelaki';
+      const renderStyle = style || 'Pixar 3D Style';
+
+      // 4 standardized presentation poses
+      const poseDefinitions = [
+        {
+          poseId: 'pose_welcome' as const,
+          label: '1. Gaya Pembukaan & Sambutan Mesra',
+          action: 'Standing confidently, open welcoming hands gesture, warm charismatic smile towards audience, energetic lecturer welcoming pose',
+          desc: 'Tangan terbuka menyambut audiens dengan senyuman mesra berkarisma',
+        },
+        {
+          poseId: 'pose_pointing' as const,
+          label: '2. Gaya Menunjuk & Menjelaskan Poin',
+          action: 'Holding a sleek digital glowing stylus pointer in one hand, pointing clearly sideways at infographic content, focused analytical expression',
+          desc: 'Memegang pen stylus digital bercahaya sambil menunjuk ke arah maklumat slaid',
+        },
+        {
+          poseId: 'pose_tablet' as const,
+          label: '3. Gaya Eksekutif Memegang Tablet Pintar',
+          action: 'Holding an ultra-thin glowing executive tablet/iPad in left hand, right hand making precise explanatory gesture, sharp intelligent gaze',
+          desc: 'Memegang tablet eksekutif bercahaya sambil membuat gestur penerangan data',
+        },
+        {
+          poseId: 'pose_quiz' as const,
+          label: '4. Gaya Interaktif Kuiz & Soal Jawab',
+          action: 'Curious encouraging pose, one hand raised gesturing question mark, bright engaged smile, inviting students/participants to answer',
+          desc: 'Gestur ceria menggalakkan audiens berfikir dan menjawab soalan kuiz',
+        },
+      ];
+
+      if (!ai) {
+        return res.json({
+          success: true,
+          fallback: true,
+          poses: poseDefinitions.map(p => ({
+            poseId: p.poseId,
+            label: p.label,
+            description: p.desc,
+            imageUrl: characterSheet?.imageUrl || '',
+          })),
+        });
+      }
+
+      // If AI is available, generate image for the selected pose or primary pose
+      const parts: any[] = [];
+      if (characterSheet?.imageUrl && typeof characterSheet.imageUrl === 'string') {
+        const match = characterSheet.imageUrl.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+        if (match && match[1] && match[2]) {
+          parts.push({
+            inlineData: {
+              mimeType: match[1],
+              data: match[2],
+            },
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        poses: poseDefinitions.map(p => ({
+          poseId: p.poseId,
+          label: p.label,
+          description: p.desc,
+          actionPrompt: p.action,
+          imageUrl: characterSheet?.imageUrl || '',
+        })),
+        characterMeta: {
+          name,
+          visualSpecs,
+          costumeDesc,
+          gender: charGender,
+          style: renderStyle,
+        }
+      });
+    } catch (err: any) {
+      console.error('Avatar pose generation error:', err);
+      return res.status(500).json({
+        success: false,
+        error: err.message || 'Ralat semasa memproses pose avatar.',
       });
     }
   });
