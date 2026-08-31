@@ -17,9 +17,13 @@ import {
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
-  Check
+  Check,
+  Zap,
+  Scissors,
+  Tag
 } from 'lucide-react';
 import { parsePptxFile, parseGenericSlideFile } from '../utils/pptParser';
+import { processImageTransparency } from '../utils/imageBackgroundRemover';
 
 interface MainSetupSectionProps {
   config: SetupConfig;
@@ -30,6 +34,16 @@ interface MainSetupSectionProps {
   onClosePanel?: () => void;
 }
 
+const PRESET_KEYWORD_SUGGESTIONS = [
+  'Transformasi Digital, Kecerdasan Buatan (AI), Analitik Data, Automasi Pintar',
+  'Tadbir Urus Korporat, Integriti, Pengurusan Risiko, Audit Pematuhan',
+  'Sains Komputer, Pengaturcaraan Python, Struktur Data, Keselamatan Siber',
+  'Reka Bentuk UI/UX, Seni Bina Maklumat, Wireframing, Prototaip Interaktif',
+  'Pemasaran Digital, Pengiklanan Media Sosial, Saluran Jualan E-Dagang, Metrik ROI',
+  'Kesihatan Mental di Tempat Kerja, Pengurusan Tekanan, Keseimbangan Kerja-Hayat',
+  'Pengurusan Kewangan Strategik, Pelaburan Saham, Belanjawan Operasi, Aliran Tunai'
+];
+
 export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
   config,
   onChangeConfig,
@@ -38,10 +52,11 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
   hasExistingSlides,
   onClosePanel,
 }) => {
-  const [contentMode, setContentMode] = useState<'ppt' | 'text'>(
-    config.uploadedPpt ? 'ppt' : 'text'
+  const [contentMode, setContentMode] = useState<'keywords' | 'ppt' | 'text'>(
+    config.uploadedPpt ? 'ppt' : 'keywords'
   );
   const [isParsingPpt, setIsParsingPpt] = useState(false);
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   const [pptError, setPptError] = useState<string | null>(null);
   const [isColorsExpanded, setIsColorsExpanded] = useState(false);
 
@@ -84,9 +99,13 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsProcessingAvatar(true);
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const base64 = event.target?.result as string;
+      // Automatically isolate transparent cutout background
+      const transparentCutout = await processImageTransparency(base64);
+
       onChangeConfig({
         ...config,
         characterSheet: {
@@ -97,11 +116,31 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
             gender: 'Lelaki',
           }),
           fileName: file.name,
-          imageUrl: base64,
+          imageUrl: transparentCutout,
         },
       });
+      setIsProcessingAvatar(false);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleAutoRemoveBg = async () => {
+    if (!config.characterSheet?.imageUrl) return;
+    setIsProcessingAvatar(true);
+    try {
+      const transparentUrl = await processImageTransparency(config.characterSheet.imageUrl, 45);
+      onChangeConfig({
+        ...config,
+        characterSheet: {
+          ...config.characterSheet,
+          imageUrl: transparentUrl,
+        },
+      });
+    } catch (err) {
+      console.error('Error removing background:', err);
+    } finally {
+      setIsProcessingAvatar(false);
+    }
   };
 
   const isReadyToGenerate =
@@ -220,43 +259,111 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
             </div>
           </div>
 
-          {/* Kandungan Slaid: PPT vs Teks */}
+          {/* Kandungan Slaid: Kata Kunci vs PPT vs Teks */}
           <div className="p-5 rounded-2xl border border-white/10 bg-[#091322] space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase font-mono">
                 <FileSpreadsheet className="w-4 h-4 text-[#06B6D4]" />
-                <span>Kandungan Slaid Pembentangan</span>
+                <span>Mod Penjanaan Kandungan Slaid</span>
               </div>
 
-              {/* Mode Toggle */}
+              {/* 3 Mode Toggle */}
               <div className="flex items-center gap-1 bg-[#0B1729] p-1 rounded-xl border border-white/10 text-xs">
                 <button
                   type="button"
+                  onClick={() => setContentMode('keywords')}
+                  className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
+                    contentMode === 'keywords'
+                      ? 'bg-gradient-to-r from-[#06B6D4] to-[#34D399] text-[#091322] shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Kata Kunci (Keywords)</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setContentMode('ppt')}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                     contentMode === 'ppt'
                       ? 'bg-[#06B6D4] text-[#091322]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  PowerPoint (.PPTX)
+                  <span>PowerPoint (.PPTX)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setContentMode('text')}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                     contentMode === 'text'
                       ? 'bg-[#06B6D4] text-[#091322]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Teks / Tajuk Manual
+                  <span>Nota Teks</span>
                 </button>
               </div>
             </div>
 
-            {contentMode === 'ppt' ? (
-              <div className="space-y-3">
+            {/* MODE 1: KEYWORDS EXPANSION (ZERO HALLUCINATION 30 SLIDES) */}
+            {contentMode === 'keywords' && (
+              <div className="space-y-3.5 animate-in fade-in duration-200">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#06B6D4]" />
+                      <span>Kata Kunci / Domain Pembentangan:</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      Auto-Jana 30 Slaid Sifar Halusinasi
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={config.topic}
+                    onChange={(e) =>
+                      onChangeConfig({ ...config, topic: e.target.value })
+                    }
+                    placeholder="Contoh: Kepimpinan Digital, Integriti, Analitik Data, Pengurusan Risiko"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#06B6D4]/40 bg-[#0B1729] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#06B6D4] shadow-inner"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1.5">
+                    Aplikasi akan menjana secara automatik <strong>15 Modul Infografik Faktual</strong> (konsep, proses, metrik, kajian kes, risiko) &amp; <strong>15 Soalan Kuiz MCQ</strong> lengkap mengikut kata kunci tanpa sebarang halusinasi.
+                  </p>
+                </div>
+
+                {/* Preset Suggestions Chips */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-[#06B6D4]" />
+                    <span>Cadangan Kata Kunci Popular:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_KEYWORD_SUGGESTIONS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() =>
+                          onChangeConfig({
+                            ...config,
+                            topic: preset,
+                            referenceText: `Struktur kurikulum mendalam bagi ${preset}`,
+                          })
+                        }
+                        className="text-[10px] px-2.5 py-1 rounded-lg border border-white/10 bg-[#0B1729] hover:border-[#06B6D4]/50 hover:bg-[#06B6D4]/10 text-slate-300 hover:text-white transition-all text-left truncate max-w-full"
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODE 2: PPT UPLOAD */}
+            {contentMode === 'ppt' && (
+              <div className="space-y-3 animate-in fade-in duration-200">
                 <label className="border-2 border-dashed border-white/15 hover:border-[#06B6D4]/50 bg-[#0B1729] rounded-2xl p-6 flex flex-col items-center justify-center gap-2.5 text-center cursor-pointer transition-all">
                   <div className="w-12 h-12 rounded-2xl bg-[#06B6D4]/10 text-[#06B6D4] flex items-center justify-center">
                     <UploadCloud className="w-6 h-6" />
@@ -318,8 +425,11 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="space-y-3">
+            )}
+
+            {/* MODE 3: FULL MANUAL TEXT */}
+            {contentMode === 'text' && (
+              <div className="space-y-3 animate-in fade-in duration-200">
                 <div>
                   <label className="text-xs font-bold text-slate-300 block mb-1">
                     Tajuk Utama / Modul Pembentangan:
@@ -370,43 +480,60 @@ export const MainSetupSection: React.FC<MainSetupSectionProps> = ({
                 <User className="w-4 h-4 text-[#06B6D4]" />
                 <span>Persona Watak &amp; Avatar</span>
               </div>
-              <span className="text-[10px] font-mono text-cyan-400">Untuk AI Prompt</span>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Lutsinar / Tanpa Background
+              </span>
             </div>
 
             {/* Character Sheet Upload & Preview */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 {config.characterSheet?.imageUrl ? (
-                  <div className="w-16 h-16 rounded-xl border border-[#06B6D4]/40 overflow-hidden bg-[#0B1729] shrink-0 relative group">
+                  <div className="w-20 h-20 rounded-2xl border border-[#06B6D4]/40 bg-slate-950/80 p-1 flex items-center justify-center shrink-0 relative group shadow-lg">
                     <img
                       src={config.characterSheet.imageUrl}
                       alt="Character Sheet"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain filter drop-shadow-md"
                     />
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-xl border border-white/10 bg-[#0B1729] flex items-center justify-center text-slate-500 shrink-0">
-                    <User className="w-7 h-7" />
+                  <div className="w-20 h-20 rounded-2xl border border-white/10 bg-[#0B1729] flex items-center justify-center text-slate-500 shrink-0">
+                    <User className="w-8 h-8" />
                   </div>
                 )}
 
-                <div className="flex-1 min-w-0">
-                  <label className="px-3 py-1.5 rounded-xl border border-white/15 hover:border-[#06B6D4]/50 bg-[#0B1729] text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer w-fit transition-all">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
-                    <span>
-                      {config.characterSheet?.imageUrl
-                        ? 'Tukar Character Sheet'
-                        : 'Upload Character Sheet'}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCharacterSheetUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <span className="text-[10px] text-slate-400 block mt-1 truncate">
-                    {config.characterSheet?.fileName || 'Fail imej watak rujukan'}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <label className="px-3 py-1.5 rounded-xl border border-white/15 hover:border-[#06B6D4]/50 bg-[#0B1729] text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer w-fit transition-all">
+                      <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
+                      <span>
+                        {config.characterSheet?.imageUrl
+                          ? 'Tukar Character Sheet'
+                          : 'Upload Character Sheet'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCharacterSheetUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {config.characterSheet?.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={handleAutoRemoveBg}
+                        disabled={isProcessingAvatar}
+                        className="px-2.5 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center gap-1 transition-all"
+                        title="Buang latar belakang imej secara automatik"
+                      >
+                        <Scissors className="w-3 h-3" />
+                        <span>{isProcessingAvatar ? 'Memproses...' : 'Buang Background'}</span>
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-400 block truncate">
+                    {config.characterSheet?.fileName || 'Watak akan dipaparkan secara lutsinar di atas slaid'}
                   </span>
                 </div>
               </div>

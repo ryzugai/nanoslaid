@@ -57,40 +57,29 @@ export const PresenterAvatarView: React.FC<PresenterAvatarViewProps> = ({
       )}
 
       {/* Main Avatar Figure Container */}
-      <div className="relative w-full max-w-[190px] sm:max-w-[230px] flex flex-col items-center z-10">
+      <div className="relative w-full max-w-[210px] sm:max-w-[250px] flex flex-col items-center z-10">
         
-        {/* If User Uploaded Character Sheet Image */}
+        {/* If User Uploaded Character Sheet Image (Render with Seamless Transparent Cutout) */}
         {charSheet?.imageUrl ? (
           <div className="relative group w-full flex flex-col items-center">
-            <div
-              className="relative w-36 sm:w-44 h-48 sm:h-56 rounded-2xl overflow-hidden border-2 shadow-2xl bg-slate-950/80 flex items-center justify-center p-1.5"
-              style={{
-                borderColor: primaryAccent,
-                boxShadow: `0 8px 28px -6px ${primaryAccent}44`,
-              }}
-            >
+            {/* Cutout Avatar with Natural Drop Shadow */}
+            <div className="relative w-40 sm:w-52 h-56 sm:h-64 flex items-end justify-center">
               <img
                 src={charSheet.imageUrl}
                 alt={charName}
-                className="w-full h-full object-contain drop-shadow-md rounded-xl"
+                className="w-full h-full object-contain filter drop-shadow-[0_16px_28px_rgba(0,0,0,0.5)] transition-all duration-300 transform group-hover:scale-105"
                 referrerPolicy="no-referrer"
-              />
-              <div
-                className="absolute inset-0 pointer-events-none opacity-15 rounded-2xl"
-                style={{
-                  background: `linear-gradient(to top, ${primaryAccent}, transparent)`,
-                }}
               />
             </div>
 
-            {/* Glowing Nametag Badge */}
+            {/* Glowing Executive Nametag Badge */}
             {config.useNametag && (
               <div
-                className="mt-2 px-3 py-1 rounded-lg border text-[11px] sm:text-xs font-mono font-black text-white shadow-lg tracking-wider flex items-center gap-1.5"
+                className="mt-1.5 px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono font-black text-white shadow-xl tracking-wider flex items-center gap-1.5 backdrop-blur-md"
                 style={{
-                  backgroundColor: '#0F172A',
+                  backgroundColor: 'rgba(15, 23, 42, 0.92)',
                   borderColor: primaryAccent,
-                  boxShadow: `0 0 14px ${primaryAccent}66`,
+                  boxShadow: `0 0 16px ${primaryAccent}55`,
                 }}
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

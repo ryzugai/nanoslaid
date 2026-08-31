@@ -786,97 +786,105 @@ export function extractAndGenerate30Infographics(config: SetupConfig, isMalay: b
     }
   }
 
-  // CASE 3: Only mainTopic provided (Generate 30 structured topics for this specific title)
-  const defaultModulesMalay = [
-    'Pengenalan & Visi Strategik',
-    'Latar Belakang & Analisis Keperluan',
-    'Objektif & Matlamat Utama',
-    'Prinsip Asas & Kerangka Kerja',
-    'Tadbir Urus & Pematuhan Integriti',
-    'Pelaksanaan Operasi Pintar',
-    'Pembangunan Modal Insan & Bakat',
-    'Kolaborasi & Sinergi Ekosistem',
-    'Aliran Proses Pelaksanaan Berperingkat',
-    'Analisis Risiko & Pelan Mitigasi',
-    'Metrik Prestasi & Sasaran KPI',
-    'Pengoptimuman Sumber & Belanjawan',
-    'Integrasi Teknologi & Keselamatan Data',
-    'Pengurusan Perubahan & Budaya Kerja',
-    'Kawalan Kualiti & Penandaarasan',
-    'Kajian Impak & Nilai Pemegang Taruh',
-    'Struktur Pasukan & Peranan Utama',
-    'Pelan Hala Tuju Garis Masa Strategik',
-    'Strategi Komunikasi & Penyampaian',
-    'Audit Prestasi & Ketelusan Maklumat',
-    'Automasi Proses & Peningkatan Kecekapan',
-    'Dasar Keselamatan & Privasi Digital',
-    'Pemerkasaan Bakat & Latihan Berterusan',
-    'Pengukuran Kepuasan & Maklum Balas',
-    'Inovasi Berterusan & Penyelidikan',
-    'Ketahanan Operasi & Pelan Kontingensi',
-    'Kelestarian & Pertumbuhan Mampan',
-    'Pelan Tindakan Segera 30 Hari',
-    'Faktor Kejayaan Kritikal Organisasi',
-    'Rumusan Eksekutif & Penutup'
-  ];
+  // CASE 3: Keyword / Domain Topic Provided - Synthesize 30 Structured, Non-Hallucinatory Modules
+  const keywordsList = mainTopic
+    .split(/[,;\n•\|]/)
+    .map(k => k.trim())
+    .filter(k => k.length > 1);
 
-  const defaultModulesEnglish = [
-    'Executive Introduction & Strategic Vision',
-    'Background & Needs Assessment',
-    'Core Objectives & Goals',
-    'Foundational Principles & Architecture',
-    'Governance & Integrity Compliance',
-    'Smart Operational Execution',
-    'Talent Development & Human Capital',
-    'Ecosystem Collaboration & Synergy',
-    'Phased Process Workflow Delivery',
-    'Risk Analysis & Mitigation Framework',
-    'Performance Metrics & KPI Targets',
-    'Resource Allocation & Budget Optimization',
-    'Technology Integration & Data Security',
-    'Change Management & Organizational Culture',
-    'Quality Control & Benchmarking',
-    'Stakeholder Impact & Community Value',
-    'Team Structure & Key Responsibilities',
-    'Strategic Timeline & Milestone Roadmap',
-    'Communication & Delivery Strategy',
-    'Performance Audit & Information Transparency',
-    'Process Automation & Operational Efficiency',
-    'Security Policy & Digital Privacy',
-    'Talent Enablement & Continuous Upskilling',
-    'Satisfaction Measurement & Feedback Loops',
-    'Continuous Innovation & R&D',
-    'Operational Resilience & Contingency Plan',
-    'Sustainability & Long-Term Growth',
-    'Immediate 30-Day Action Plan',
-    'Critical Success Factors (CSF)',
-    'Executive Summary & Conclusion'
+  const primaryKeyword = keywordsList[0] || (isMalay ? 'Transformasi Strategik' : 'Strategic Transformation');
+  const secondaryKeywords = keywordsList.slice(1);
+
+  // 30 Comprehensive Educational & Operational Core Dimensions (Zero Hallucination Curriculum)
+  const curriculumDimensions = isMalay ? [
+    { title: `Visi, Skop & Definisi Teras ${primaryKeyword}`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Definisi & Skop' },
+    { title: `Latar Belakang & Analisis Keperluan Strategik`, type: 'CASE_STUDY_SHOWCASE' as InfographicArchetype, focus: 'Rasional & Konteks' },
+    { title: `Objektif Utama & Sasaran Berimpak Tinggi`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Sasaran & KPI' },
+    { title: `Prinsip Asas & Kerangka Konseptual ${primaryKeyword}`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Prinsip & Falsafah' },
+    { title: `Komponen Teras & Struktur Ekosistem Operasi`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Struktur Seni Bina' },
+    { title: `Aliran Proses Pelaksanaan Berperingkat`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Metodologi Kerja' },
+    { title: `Tadbir Urus, Integriti & Pematuhan Standard`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Pematuhan & Standard' },
+    { title: `Matriks Analisis Risiko & Pelan Mitigasi`, type: 'QUADRANT_MATRIX' as InfographicArchetype, focus: 'Pengurusan Risiko' },
+    { title: `Aplikasi Praktikal & Kajian Kes Lapangan`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Kajian Kes Sebenar' },
+    { title: `Perbandingan Kaedah Tradisional vs Pendekatan Moden`, type: 'COMPARISON_MATRIX' as InfographicArchetype, focus: 'Analisis Perbandingan' },
+    { title: `Pengukuran Prestasi, Metrik & Petunjuk KPI`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Metrik & Dashboard' },
+    { title: `Pemerkasaan Bakat, Modal Insan & Latihan`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Pembangunan Bakat' },
+    { title: `Integrasi Teknologi Pintar & Automasi Proses`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Teknologi & Alatan' },
+    { title: `Garis Masa Pelaksanaan & Pencapaian Utama (Milestones)`, type: 'TIMELINE_ROADMAP' as InfographicArchetype, focus: 'Garis Masa Strategik' },
+    { title: `Pengoptimuman Sumber & Kecekapan Belanjawan`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Pengurusan Sumber' },
+    { title: `Komunikasi Strategik & Penglibatan Pemegang Taruh`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Penyampaian & Impak' },
+    { title: `Audit Kualiti & Mekanisme Ketelusan Maklumat`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Jaminan Kualiti' },
+    { title: `Pengurusan Perubahan & Transformasi Budaya Kerja`, type: 'CASE_STUDY_SHOWCASE' as InfographicArchetype, focus: 'Adaptasi Organisasi' },
+    { title: `Keselamatan, Privasi Data & Perlindungan Maklumat`, type: 'QUADRANT_MATRIX' as InfographicArchetype, focus: 'Keselamatan Maklumat' },
+    { title: `Peningkatan Berterusan (Kaizen) & Inovasi R&D`, type: 'CIRCULAR_CYCLE' as InfographicArchetype, focus: 'Inovasi Berterusan' },
+    { title: `Ketahanan Operasi & Pelan Kontingensi Krisis`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Pelan Kontingensi' },
+    { title: `Kerjasama Merentas Sektor & Sinergi Industri`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Jaringan Strategik' },
+    { title: `Kajian Impak & Nilai Tambah Jangka Panjang`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Penciptaan Nilai' },
+    { title: `Pengukuran Kepuasan Pengguna & Gelung Maklum Balas`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Kepuasan Pengguna' },
+    { title: `Standard Operasi Prosedur (SOP) & Garis Panduan`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Dokumentasi & SOP' },
+    { title: `Kelestarian & Pertumbuhan Mampan Organisasi`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Kelestarian Mampan' },
+    { title: `Pelan Tindakan Segera 30-60-90 Hari`, type: 'TIMELINE_ROADMAP' as InfographicArchetype, focus: 'Pelan Tindakan Pantas' },
+    { title: `Faktor Kejayaan Kritikal (Critical Success Factors)`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Faktor Kejayaan' },
+    { title: `Cabaran Utama & Strategi Penyelesaian Taktikal`, type: 'COMPARISON_MATRIX' as InfographicArchetype, focus: 'Penyelesaian Cabaran' },
+    { title: `Rumusan Eksekutif, Implikasi & Hala Tuju`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Rumusan & Hala Tuju' }
+  ] : [
+    { title: `Core Vision, Scope & Definition of ${primaryKeyword}`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Definition & Scope' },
+    { title: `Background & Strategic Needs Assessment`, type: 'CASE_STUDY_SHOWCASE' as InfographicArchetype, focus: 'Rationale & Context' },
+    { title: `Key Objectives & High-Impact Targets`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Goals & KPIs' },
+    { title: `Foundational Principles & Framework of ${primaryKeyword}`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Principles & Philosophy' },
+    { title: `Core Components & Operational Ecosystem Architecture`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Architecture Structure' },
+    { title: `Phased Workflow & Step-by-Step Delivery`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Work Methodology' },
+    { title: `Governance, Integrity & Standard Compliance`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Compliance & Standards' },
+    { title: `Risk Analysis Matrix & Mitigation Roadmap`, type: 'QUADRANT_MATRIX' as InfographicArchetype, focus: 'Risk Management' },
+    { title: `Practical Application & Real-World Case Studies`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Case Studies' },
+    { title: `Comparative Analysis: Legacy vs Modern Approaches`, type: 'COMPARISON_MATRIX' as InfographicArchetype, focus: 'Comparative Analysis' },
+    { title: `Performance Metrics, Dashboards & KPI Tracking`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Metrics & Dashboards' },
+    { title: `Talent Enablement, Human Capital & Upskilling`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Talent Growth' },
+    { title: `Smart Technology Integration & Process Automation`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Tech & Tooling' },
+    { title: `Implementation Timeline & Strategic Milestones`, type: 'TIMELINE_ROADMAP' as InfographicArchetype, focus: 'Strategic Timeline' },
+    { title: `Resource Optimization & Budget Efficiency`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'Resource Management' },
+    { title: `Strategic Communication & Stakeholder Engagement`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Engagement & Impact' },
+    { title: `Quality Assurance Audit & Information Transparency`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Quality Assurance' },
+    { title: `Change Management & Organizational Culture Shift`, type: 'CASE_STUDY_SHOWCASE' as InfographicArchetype, focus: 'Culture Shift' },
+    { title: `Information Security, Data Privacy & Protection`, type: 'QUADRANT_MATRIX' as InfographicArchetype, focus: 'Info Security' },
+    { title: `Continuous Improvement (Kaizen) & R&D Innovation`, type: 'CIRCULAR_CYCLE' as InfographicArchetype, focus: 'Continuous Innovation' },
+    { title: `Operational Resilience & Crisis Contingency Planning`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Contingency Planning' },
+    { title: `Cross-Sector Collaboration & Industry Synergy`, type: 'RADIAL_ECOSYSTEM' as InfographicArchetype, focus: 'Strategic Networking' },
+    { title: `Long-Term Impact Study & Stakeholder Value Creation`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Value Creation' },
+    { title: `User Satisfaction Measurement & Feedback Loops`, type: 'STAT_METRIC_GAUGE' as InfographicArchetype, focus: 'User Satisfaction' },
+    { title: `Standard Operating Procedures (SOP) & Documentation`, type: 'PROCESS_FLOW' as InfographicArchetype, focus: 'Documentation & SOPs' },
+    { title: `Organizational Sustainability & Scalable Growth`, type: 'MULTI_PILLAR' as InfographicArchetype, focus: 'Sustainability' },
+    { title: `Immediate 30-60-90 Day Tactical Action Plan`, type: 'TIMELINE_ROADMAP' as InfographicArchetype, focus: 'Action Roadmap' },
+    { title: `Critical Success Factors (CSF) for Excellence`, type: 'PYRAMID_HIERARCHY' as InfographicArchetype, focus: 'Success Factors' },
+    { title: `Key Challenges & Tactical Problem-Solving`, type: 'COMPARISON_MATRIX' as InfographicArchetype, focus: 'Problem Solving' },
+    { title: `Executive Summary, Strategic Takeaways & Next Steps`, type: 'BENTO_GRID' as InfographicArchetype, focus: 'Summary & Roadmap' }
   ];
 
   for (let i = 0; i < 30; i++) {
-    const modTitle = isMalay
-      ? (defaultModulesMalay[i] || `Modul ${i + 1}`)
-      : (defaultModulesEnglish[i] || `Module ${i + 1}`);
-    const fullTitle = `${modTitle}: ${mainTopic}`;
+    const dim = curriculumDimensions[i];
+    const relatedSubKeyword = secondaryKeywords[i % Math.max(1, secondaryKeywords.length)] || primaryKeyword;
+    const fullTitle = `${dim.title}`;
+
     const points = isMalay ? [
-      `Menetapkan kerangka kerja asas bagi ${modTitle} dalam inisiatif ${mainTopic} secara menyeluruh.`,
-      `Menyelaraskan strategi pelaksanaan berkesan bersama semua pemegang taruh untuk hasil maksimum.`,
-      `Memastikan pematuhan standard kualiti tinggi dan pemantauan metrik secara telus dan berterusan.`
+      `Menetapkan garis panduan komprehensif bagi ${dim.focus.toLowerCase()} dalam kerangka ${relatedSubKeyword}.`,
+      `Melaksanakan pemantauan berstruktur berasaskan bukti dan data operasi yang disahkan.`,
+      `Memastikan pematuhan standard kecemerlangan bagi memaksimumkan impak positif secara mampan.`
     ] : [
-      `Establishing core foundational frameworks for ${modTitle} within the ${mainTopic} initiative.`,
-      `Aligning execution strategies with cross-functional teams to maximize sustainable impact.`,
-      `Ensuring strict adherence to high-tier benchmarks and ongoing transparent metric tracking.`
+      `Establishing comprehensive operational guidelines for ${dim.focus.toLowerCase()} within ${relatedSubKeyword}.`,
+      `Executing structured evidence-based tracking backed by verified performance data.`,
+      `Ensuring strict compliance with top-tier benchmarks to achieve sustainable, measurable impact.`
     ];
+
     const { infographicType, meta } = detectArchetypeFromContent(fullTitle, points, i, isMalay);
 
     generatedOutlines.push({
       title: fullTitle,
       summary: isMalay
-        ? `modul '${fullTitle}' menggariskan tindakan strategik bagi mencapai hasil optimum.`
-        : `the segment '${fullTitle}' outlines strategic execution for optimal impact.`,
+        ? `modul '${fullTitle}' membincangkan ${dim.focus.toLowerCase()} untuk menjamin ketepatan pelaksanaan.`
+        : `the module '${fullTitle}' addresses ${dim.focus.toLowerCase()} to guarantee execution excellence.`,
       points,
-      coreHighlight: isMalay ? `Fokus: ${modTitle}` : `Focus: ${modTitle}`,
-      infographicType,
+      coreHighlight: isMalay ? `Tumpuan: ${dim.focus}` : `Focus: ${dim.focus}`,
+      infographicType: dim.type || infographicType,
       meta
     });
   }

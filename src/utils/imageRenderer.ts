@@ -1625,63 +1625,44 @@ function drawAvatarPresenterOnCanvas(
   ctx.fillStyle = pillarGrad;
   ctx.fillRect(x - 20, y + 20, w + 40, h - 20);
 
-  // 2. CASE A: USER UPLOADED A CHARACTER SHEET IMAGE
+  // 2. CASE A: USER UPLOADED A CHARACTER SHEET IMAGE (SEAMLESS CUTOUT AVATAR)
   if (preloadedCharImg && preloadedCharImg.naturalWidth > 0) {
-    const cardX = x + 10;
-    const cardY = y + 40;
-    const cardW = w - 20;
-    const cardH = h - 110;
+    const avatarW = w * 0.92;
+    const avatarH = h * 0.86;
+    const avatarX = centerX - avatarW / 2;
+    const avatarY = y + h - avatarH - 45;
 
-    // Outer Glow & Executive Stage Frame
+    // Studio Floor Soft Contact Shadow
     ctx.save();
-    ctx.shadowColor = `${primaryAccent}55`;
-    ctx.shadowBlur = 32;
-    ctx.shadowOffsetY = 12;
-
-    // Sleek Frame Background
-    ctx.fillStyle = isDark ? '#0F172A' : '#FFFFFF';
-    roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+    const shadowGrad = ctx.createRadialGradient(centerX, y + h - 35, 10, centerX, y + h - 35, avatarW * 0.55);
+    shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+    shadowGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.35)');
+    shadowGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = shadowGrad;
+    ctx.beginPath();
+    ctx.ellipse(centerX, y + h - 35, avatarW * 0.5, 26, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Gradient Accent Border
-    const borderGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-    borderGrad.addColorStop(0, primaryAccent);
-    borderGrad.addColorStop(1, secondaryAccent);
-    ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = 3.5;
-    ctx.stroke();
     ctx.restore();
 
-    // Draw Character Image inside Stage Frame (with rounded clipping)
-    ctx.save();
-    roundRect(ctx, cardX + 4, cardY + 4, cardW - 8, cardH - 8, 24);
-    ctx.clip();
-
-    // Center and scale image properly
+    // Calculate Aspect Ratio Fit for Transparent Cutout
     const imgAspect = preloadedCharImg.naturalWidth / preloadedCharImg.naturalHeight;
-    const targetAspect = (cardW - 8) / (cardH - 8);
+    let drawW = avatarW;
+    let drawH = avatarW / imgAspect;
 
-    let drawW = cardW - 8;
-    let drawH = cardH - 8;
-    let drawX = cardX + 4;
-    let drawY = cardY + 4;
-
-    if (imgAspect > targetAspect) {
-      drawW = (cardH - 8) * imgAspect;
-      drawX = cardX + 4 - (drawW - (cardW - 8)) / 2;
-    } else {
-      drawH = (cardW - 8) / imgAspect;
-      drawY = cardY + 4 - (drawH - (cardH - 8)) / 2;
+    if (drawH > avatarH) {
+      drawH = avatarH;
+      drawW = avatarH * imgAspect;
     }
 
-    ctx.drawImage(preloadedCharImg, drawX, drawY, drawW, drawH);
+    const drawX = centerX - drawW / 2;
+    const drawY = y + h - drawH - 55;
 
-    // Subtle inner studio vignette
-    const innerVignette = ctx.createLinearGradient(cardX, cardY + cardH - 120, cardX, cardY + cardH);
-    innerVignette.addColorStop(0, 'transparent');
-    innerVignette.addColorStop(1, 'rgba(15, 23, 42, 0.7)');
-    ctx.fillStyle = innerVignette;
-    ctx.fillRect(cardX + 4, cardY + cardH - 124, cardW - 8, 120);
+    // Draw Character Cutout
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 12;
+    ctx.drawImage(preloadedCharImg, drawX, drawY, drawW, drawH);
     ctx.restore();
 
     // Laser / Interactive Hologram Beam from Character towards Slide Content
@@ -1693,62 +1674,52 @@ function drawAvatarPresenterOnCanvas(
       ctx.shadowBlur = 14;
       ctx.beginPath();
       if (isLeft) {
-        ctx.moveTo(cardX + cardW - 10, cardY + cardH * 0.45);
-        ctx.lineTo(cardX + cardW + 180, cardY + cardH * 0.35);
+        ctx.moveTo(drawX + drawW * 0.85, drawY + drawH * 0.45);
+        ctx.lineTo(drawX + drawW + 180, drawY + drawH * 0.35);
       } else {
-        ctx.moveTo(cardX + 10, cardY + cardH * 0.45);
-        ctx.lineTo(cardX - 180, cardY + cardH * 0.35);
+        ctx.moveTo(drawX + drawW * 0.15, drawY + drawH * 0.45);
+        ctx.lineTo(drawX - 180, drawY + drawH * 0.35);
       }
       ctx.stroke();
 
       // Sparkle Tip
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.arc(isLeft ? cardX + cardW + 180 : cardX - 180, cardY + cardH * 0.35, 7, 0, Math.PI * 2);
+      ctx.arc(isLeft ? drawX + drawW + 180 : drawX - 180, drawY + drawH * 0.35, 7, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
-    // Executive Floating Nametag Badge
-    const tagY = cardY + cardH - 32;
-    ctx.save();
-    ctx.font = '900 16px "Plus Jakarta Sans", monospace';
-    const tagText = `${charName}`;
-    const tagW = Math.min(cardW - 40, ctx.measureText(tagText).width + 48);
-    const tagX = centerX - tagW / 2;
+    // Floating Executive Nametag Badge
+    if (config.useNametag) {
+      const tagY = y + h - 52;
+      ctx.save();
+      ctx.font = '900 16px "Plus Jakarta Sans", monospace';
+      const tagText = `${charName}`;
+      const tagW = ctx.measureText(tagText).width + 56;
+      const tagX = centerX - tagW / 2;
 
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = '#0F172A';
-    roundRect(ctx, tagX, tagY, tagW, 36, 12);
-    ctx.fill();
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+      roundRect(ctx, tagX, tagY, tagW, 38, 19);
+      ctx.fill();
 
-    ctx.strokeStyle = primaryAccent;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      ctx.strokeStyle = primaryAccent;
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-    // Active Green Dot
-    ctx.fillStyle = '#10B981';
-    ctx.beginPath();
-    ctx.arc(tagX + 16, tagY + 18, 4.5, 0, Math.PI * 2);
-    ctx.fill();
+      // Active Green Dot
+      ctx.fillStyle = '#10B981';
+      ctx.beginPath();
+      ctx.arc(tagX + 18, tagY + 19, 5, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.fillText(tagText, centerX + 8, tagY + 24);
-    ctx.restore();
-
-    // Stand Base Plate
-    const basePlateY = y + h - 50;
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-    roundRect(ctx, centerX - 140, basePlateY, 280, 36, 18);
-    ctx.fill();
-
-    ctx.font = '800 13px "Plus Jakarta Sans", monospace';
-    ctx.fillStyle = primaryAccent;
-    ctx.textAlign = 'center';
-    ctx.fillText(`WATAK RASMI • ${config.presenterStyle.toUpperCase()}`, centerX, basePlateY + 23);
-    ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.fillText(tagText, centerX + 10, tagY + 25);
+      ctx.restore();
+    }
 
     ctx.restore();
     return;

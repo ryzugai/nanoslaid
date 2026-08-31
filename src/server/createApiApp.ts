@@ -29,6 +29,99 @@ export function registerApiRoutes(router: express.Router) {
     });
   });
 
+  // Endpoint to expand keywords into a full 30-slide structured curriculum without hallucinations
+  router.post('/gemini/generate-keywords-curriculum', async (req, res) => {
+    try {
+      const { keywords, language } = req.body;
+      if (!keywords || typeof keywords !== 'string' || !keywords.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Sila masukkan kata kunci topik pembentangan.',
+        });
+      }
+
+      const ai = getGeminiClient();
+      if (!ai) {
+        return res.status(200).json({
+          fallback: true,
+          message: 'Gemini API client not configured, using built-in deterministic taxonomy engine.',
+        });
+      }
+
+      const isMalay = language !== 'English';
+      const systemInstruction = `Anda adalah Pakar Penggubal Kurikulum Pembentangan Korporat dan Akademik Peringkat Kebangsaan Malaysia.
+Tugas anda adalah menjana struktur pembentangan 30 slaid yang mendalam, faktual, tepat, dan BERKUALITI TINGGI berasaskan KATA KUNCI (Keywords) yang diberikan oleh pengguna.
+SANGAT PENTING:
+1. SIFAR HALUSINASI: Jangan reka fakta palsu, akronim mengelirukan, atau teks generik/placeholder (seperti "Intipati perbincangan", "Poin 1").
+2. Setiap slaid MESTI mempunyai:
+   - Tajuk yang spesifik, profesional, dan padat.
+   - 3 atau 4 poin huraian yang kaya dengan metodologi, metrik, prinsip operasi, atau strategi sebenar.
+   - Jenis infografik yang paling sesuai (PROCESS_FLOW, MULTI_PILLAR, COMPARISON_MATRIX, TIMELINE_ROADMAP, STAT_METRIC_GAUGE, BENTO_GRID, CASE_STUDY_SHOWCASE, QUADRANT_MATRIX, PYRAMID_HIERARCHY, RADIAL_ECOSYSTEM).
+3. Struktur 30 Slaid:
+   - Slaid 1-15: 15 Modul Pembelajaran Teras (Pengenalan, Rasional, Kerangka Kerja, Proses, Risiko, Metrik, Kajian Kes, Teknologi, dsb.)
+   - Slaid 16-30: 15 Soalan Kuiz MCQ Interaktif lengkap dengan 4 pilihan A, B, C, D, jawapan betul (A/B/C/D), dan huraian rasional.
+4. Bahasa: ${isMalay ? 'Bahasa Melayu Baku Malaysia yang tepat dan formal' : 'Formal Executive English'}.
+5. Pulangkan output dalam format JSON sah mengikut skema yang ditetapkan.`;
+
+      const prompt = `Jana silibus pembentangan 30 slaid berasaskan kata kunci berikut:
+"${keywords}"
+
+Sila kembalikan dalam format JSON dengan struktur:
+{
+  "topic": "Tajuk Utama Pembentangan yang Menarik",
+  "modules": [
+    {
+      "slideNumber": 1,
+      "title": "Tajuk Slaid",
+      "summary": "Ringkasan skrip 1 ayat",
+      "points": ["Poin fakta mendalam 1", "Poin fakta mendalam 2", "Poin fakta mendalam 3"],
+      "infographicType": "PROCESS_FLOW",
+      "coreHighlight": "Fokus Utama"
+    }
+    ... (hingga Slaid 15)
+  ],
+  "mcqs": [
+    {
+      "slideNumber": 16,
+      "relatedModuleIndex": 1,
+      "question": "Teks soalan MCQ yang menguji topik...",
+      "options": [
+        {"label": "A", "text": "Pilihan A"},
+        {"label": "B", "text": "Pilihan B"},
+        {"label": "C", "text": "Pilihan C"},
+        {"label": "D", "text": "Pilihan D"}
+      ],
+      "correctOption": "A",
+      "explanation": "Penjelasan mengapa jawapan ini tepat..."
+    }
+    ... (hingga Slaid 30 / 15 Soalan)
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.7-flash',
+        contents: prompt,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          temperature: 0.2, // Low temperature for high factual consistency
+        },
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      return res.json({
+        success: true,
+        data: parsed,
+      });
+    } catch (err: any) {
+      console.error('Gemini Curriculum Generation Error:', err);
+      return res.status(500).json({
+        success: false,
+        error: err.message || 'Ralat semasa menjana kurikulum slaid.',
+      });
+    }
+  });
+
   // Endpoint to generate or refine slide content with Gemini 3.7 Flash
   router.post('/gemini/generate-slide-ai', async (req, res) => {
     try {
