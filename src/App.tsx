@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { SetupConfig, SlideData, DraftSlideItem, CharacterSheetData } from './types';
+import { SetupConfig, SlideData, DraftSlideItem, CharacterSheetData, InfographicArchetype } from './types';
 import {
   generateCurated45Slides,
   generateDraftCurriculum,
   reassignAvatarsRandomly,
-  updateSingleSlideAvatar
+  updateSingleSlideAvatar,
+  updateSlideInfographicArchetype,
+  buildInfographicMetaForArchetype
 } from './utils/slideGenerator';
 import { OFFICIAL_COLOR_SCHEMES } from './data/colorSchemes';
 import { Header } from './components/Header';
@@ -16,6 +18,7 @@ import { TeleprompterModal } from './components/TeleprompterModal';
 import { DraftReviewModal } from './components/DraftReviewModal';
 import { AvatarGenerationModal } from './components/AvatarGenerationModal';
 import { MultiAvatarUploadModal } from './components/MultiAvatarUploadModal';
+import { InfographicTypeSelectorModal } from './components/InfographicTypeSelectorModal';
 import {
   Search,
   SlidersHorizontal,
@@ -27,7 +30,8 @@ import {
   FileText,
   ShieldCheck,
   Users,
-  Shuffle
+  Shuffle,
+  Layers
 } from 'lucide-react';
 
 export default function App() {
@@ -104,6 +108,16 @@ export default function App() {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isMultiAvatarModalOpen, setIsMultiAvatarModalOpen] = useState(false);
   const [teleprompterSlide, setTeleprompterSlide] = useState<SlideData | null>(null);
+
+  // Infographic Archetype Selector Modal State
+  const [infographicSelectorState, setInfographicSelectorState] = useState<{
+    isOpen: boolean;
+    slideNumber: number;
+    slideTitle: string;
+    slidePoints: string[];
+    currentArchetype: InfographicArchetype;
+    isDraft: boolean;
+  } | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'infographic' | 'mcq' | 'left' | 'right' | 'withImage'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -236,6 +250,103 @@ export default function App() {
       })
     );
   };
+
+  // Open Infographic Archetype Selector for a generated slide
+  const handleOpenInfographicSelectorForSlide = (slide: SlideData) => {
+    setInfographicSelectorState({
+      isOpen: true,
+      slideNumber: slide.slideNumber,
+      slideTitle: slide.title,
+      slidePoints: slide.infographicPoints || [],
+      currentArchetype: slide.infographicType || 'BENTO_GRID',
+      isDraft: false,
+    });
+  };
+
+  // Open Infographic Archetype Selector for a draft item
+  const handleOpenInfographicSelectorForDraft = (draft: DraftSlideItem) => {
+    setInfographicSelectorState({
+      isOpen: true,
+      slideNumber: draft.slideNumber,
+      slideTitle: draft.title,
+      slidePoints: draft.points || [],
+      currentArchetype: draft.infographicType || 'BENTO_GRID',
+      isDraft: true,
+    });
+  };
+
+  // Update chosen infographic archetype
+  const handleSelectArchetype = (newArchetype: InfographicArchetype) => {
+    if (!infographicSelectorState) return;
+
+    const isMalay = config.outputLanguage === 'Bahasa Melayu Baku Malaysia';
+
+    if (infographicSelectorState.isDraft) {
+      setDraftSlides((prev) =>
+        prev.map((d) => {
+          if (d.slideNumber === infographicSelectorState.slideNumber) {
+            const newMeta = buildInfographicMetaForArchetype(
+              newArchetype,
+              d.title,
+              d.points,
+              isMalay
+            );
+            return {
+              ...d,
+              infographicType: newArchetype,
+              meta: newMeta
+            };
+          }
+          return d;
+        })
+      );
+    } else {
+      setSlides((prev) =>
+        prev.map((s) => {
+          if (s.slideNumber === infographicSelectorState.slideNumber) {
+            return updateSlideInfographicArchetype(s, newArchetype, config);
+          }
+          return s;
+        })
+      );
+    }
+  };
+
+  // Apply chosen infographic archetype to all 30 infographic slides
+  const handleApplyArchetypeToAll30 = (newArchetype: InfographicArchetype) => {
+    const isMalay = config.outputLanguage === 'Bahasa Melayu Baku Malaysia';
+    if (draftSlides.length > 0) {
+      setDraftSlides((prev) =>
+        prev.map((d) => {
+          if (!d.isMcq) {
+            const newMeta = buildInfographicMetaForArchetype(
+              newArchetype,
+              d.title,
+              d.points,
+              isMalay
+            );
+            return {
+              ...d,
+              infographicType: newArchetype,
+              meta: newMeta
+            };
+          }
+          return d;
+        })
+      );
+    }
+    if (slides.length > 0) {
+      setSlides((prev) =>
+        prev.map((s) => {
+          if (!s.isMcq) {
+            return updateSlideInfographicArchetype(s, newArchetype, config);
+          }
+          return s;
+        })
+      );
+    }
+  };
+
 
   const handleCopyAll = async () => {
     if (slides.length === 0) return;
@@ -620,6 +731,12 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
                     onOpenTeleprompter={(s) => setTeleprompterSlide(s)}
                     onUpdateSlideImage={handleUpdateSlideImage}
                     onUpdateSlideAvatar={handleUpdateSingleSlideAvatar}
+                    onOpenInfographicSelector={handleOpenInfographicSelectorForSlide}
+                    onUpdateSlideInfographic={(slideNum, arch) => {
+                      setSlides((prev) =>
+                        prev.map((s) => (s.slideNumber === slideNum ? updateSlideInfographicArchetype(s, arch, config) : s))
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -661,6 +778,7 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
         onApproveAndGenerate={handleApproveDraft}
         onClose={() => setIsDraftModalOpen(false)}
         isGeneratingPrompts={isGenerating}
+        onOpenInfographicSelector={handleOpenInfographicSelectorForDraft}
       />
 
       {/* Avatar & 4 Presentation Poses Generation Modal */}
@@ -688,6 +806,21 @@ Penerangan Ringkas: ${s.mcqDetails.explanation}
           handleShuffleSlideAvatars(updatedAvatars);
         }}
       />
+
+      {/* 4-Recommendation Infographic Archetype Selector Modal with Live Previews */}
+      {infographicSelectorState && (
+        <InfographicTypeSelectorModal
+          isOpen={infographicSelectorState.isOpen}
+          onClose={() => setInfographicSelectorState(null)}
+          slideNumber={infographicSelectorState.slideNumber}
+          slideTitle={infographicSelectorState.slideTitle}
+          slidePoints={infographicSelectorState.slidePoints}
+          currentArchetype={infographicSelectorState.currentArchetype}
+          config={config}
+          onSelectArchetype={handleSelectArchetype}
+          onApplyToAllRemainingInfographics={handleApplyArchetypeToAll30}
+        />
+      )}
     </div>
   );
 }

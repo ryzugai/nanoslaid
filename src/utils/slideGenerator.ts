@@ -406,6 +406,210 @@ function cleanAndExtractBullets(rawLines: string[]): string[] {
   return result.filter(b => b.length > 0);
 }
 
+export function buildInfographicMetaForArchetype(
+  archetype: InfographicArchetype,
+  title: string,
+  points: string[],
+  isMalay = true
+): InfographicMetaData {
+  const safePoints = points && points.length > 0 ? points : [
+    isMalay ? `Intipati dan prinsip utama bagi ${title}.` : `Core principles and foundation for ${title}.`,
+    isMalay ? `Pelaksanaan dan aplikasi praktikal ${title}.` : `Practical implementation and application for ${title}.`,
+    isMalay ? `Pencapaian standard kualiti dan hasil ${title}.` : `Quality standards and measurable impact for ${title}.`
+  ];
+
+  const extractRealNumOrText = (text: string | undefined, defaultVal: string) => {
+    if (!text) return defaultVal;
+    const match = text.match(/(\d+(?:\.\d+)?%?|\$\d+|\b\d+x\b)/);
+    return match ? match[1] : defaultVal;
+  };
+
+  switch (archetype) {
+    case 'PROCESS_FLOW': {
+      const steps = safePoints.slice(0, 4).map((pt, sIdx) => {
+        const parts = pt.split(/[:–-]/);
+        return {
+          step: sIdx + 1,
+          title: parts[0]?.trim() || (isMalay ? `Langkah 0${sIdx + 1}` : `Step 0${sIdx + 1}`),
+          desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+        };
+      });
+      return { archetype: 'PROCESS_FLOW', steps };
+    }
+
+    case 'STAT_METRIC_GAUGE': {
+      const stats = safePoints.slice(0, 3).map((pt, sIdx) => {
+        const numMatch = pt.match(/(\d+(?:\.\d+)?%?|\$\d+|\b\d+x\b)/i);
+        const val = numMatch ? numMatch[1] : (isMalay ? 'Optimum' : 'Optimal');
+        const cleanLabel = pt.replace(val, '').replace(/^[:–-\s]+/, '').trim() || (isMalay ? `Faktor 0${sIdx + 1}` : `Metric 0${sIdx + 1}`);
+        return {
+          label: cleanLabel.length > 30 ? cleanLabel.slice(0, 30) + '...' : cleanLabel,
+          value: val,
+          change: isMalay ? 'Pencapaian Diperakui' : 'Verified Target',
+          icon: 'trending-up'
+        };
+      });
+      return { archetype: 'STAT_METRIC_GAUGE', stats };
+    }
+
+    case 'MULTI_PILLAR': {
+      const pillars = safePoints.slice(0, 3).map((pt, pIdx) => {
+        const parts = pt.split(/[:–-]/);
+        return {
+          title: parts[0]?.trim() || (isMalay ? `Teras 0${pIdx + 1}` : `Pillar 0${pIdx + 1}`),
+          desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt,
+          icon: 'shield-check'
+        };
+      });
+      return { archetype: 'MULTI_PILLAR', pillars };
+    }
+
+    case 'COMPARISON_MATRIX': {
+      const half = Math.ceil(safePoints.length / 2);
+      const leftItems = safePoints.slice(0, half).length > 0 ? safePoints.slice(0, half) : [isMalay ? 'Aspek tradisi / cabaran' : 'Conventional challenge'];
+      const rightItems = safePoints.slice(half).length > 0 ? safePoints.slice(half) : [isMalay ? 'Solusi / Amalan terbaik' : 'Best practice solution'];
+      return {
+        archetype: 'COMPARISON_MATRIX',
+        comparison: {
+          leftTitle: isMalay ? 'Aspek / Cabaran Sedia Ada' : 'Existing Baseline / Challenges',
+          leftItems,
+          rightTitle: isMalay ? 'Standard / Penyelesaian Disyorkan' : 'Recommended Standard / Solution',
+          rightItems
+        }
+      };
+    }
+
+    case 'TIMELINE_ROADMAP': {
+      const phases = safePoints.slice(0, 4).map((pt, phIdx) => {
+        const parts = pt.split(/[:–-]/);
+        return {
+          phase: isMalay ? `Fasa 0${phIdx + 1}` : `Phase 0${phIdx + 1}`,
+          milestone: parts[0]?.trim() || (isMalay ? `Pencapaian 0${phIdx + 1}` : `Milestone 0${phIdx + 1}`),
+          desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+        };
+      });
+      return { archetype: 'TIMELINE_ROADMAP', phases };
+    }
+
+    case 'QUADRANT_MATRIX': {
+      return {
+        archetype: 'QUADRANT_MATRIX',
+        quadrants: {
+          q1: {
+            title: safePoints[0] ? safePoints[0].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 1' : 'Priority 1'),
+            desc: safePoints[0] || (isMalay ? 'Fokus tindakan segera berimpak tinggi.' : 'Immediate high impact action focus.'),
+            badge: isMalay ? 'Segera' : 'Urgent'
+          },
+          q2: {
+            title: safePoints[1] ? safePoints[1].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 2' : 'Priority 2'),
+            desc: safePoints[1] || (isMalay ? 'Perancangan berstruktur jangka panjang.' : 'Structured long term planning.'),
+            badge: isMalay ? 'Rancang' : 'Plan'
+          },
+          q3: {
+            title: safePoints[2] ? safePoints[2].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 3' : 'Priority 3'),
+            desc: safePoints[2] || (isMalay ? 'Pelaksanaan rutin sokongan operasi.' : 'Routine operational support.'),
+            badge: isMalay ? 'Laksana' : 'Execute'
+          },
+          q4: {
+            title: safePoints[3] ? safePoints[3].split(/[:–-]/)[0].trim() : (isMalay ? 'Keutamaan 4' : 'Priority 4'),
+            desc: safePoints[3] || (isMalay ? 'Pemantauan kualiti berterusan.' : 'Ongoing quality oversight.'),
+            badge: isMalay ? 'Pantau' : 'Monitor'
+          }
+        }
+      };
+    }
+
+    case 'RADIAL_ECOSYSTEM': {
+      const satellites = safePoints.slice(0, 4).map((pt, satIdx) => {
+        const parts = pt.split(/[:–-]/);
+        return {
+          title: parts[0]?.trim() || (isMalay ? `Elemen 0${satIdx + 1}` : `Element 0${satIdx + 1}`),
+          desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+        };
+      });
+      return {
+        archetype: 'RADIAL_ECOSYSTEM',
+        nodes: {
+          centerNode: title.length < 35 ? title : (isMalay ? 'Fokus Utama' : 'Core Focus'),
+          satellites
+        }
+      };
+    }
+
+    case 'PYRAMID_HIERARCHY': {
+      return {
+        archetype: 'PYRAMID_HIERARCHY',
+        pyramid: {
+          top: {
+            level: isMalay ? 'Aras 1: Kemuncak' : 'Tier 1: Apex',
+            title: safePoints[0] ? safePoints[0].split(/[:–-]/)[0].trim() : (isMalay ? 'Matlamat Tertinggi' : 'Ultimate Goal'),
+            desc: safePoints[0] || (isMalay ? 'Hasil akhir dan visi pelaksanaan.' : 'Final outcome and vision.')
+          },
+          middle: {
+            level: isMalay ? 'Aras 2: Pelaksanaan' : 'Tier 2: Execution',
+            title: safePoints[1] ? safePoints[1].split(/[:–-]/)[0].trim() : (isMalay ? 'Kaedah & Operasi' : 'Methods & Ops'),
+            desc: safePoints[1] || (isMalay ? 'Langkah taktikal dan aktiviti utama.' : 'Tactical steps and core activities.')
+          },
+          base: {
+            level: isMalay ? 'Aras 3: Asas' : 'Tier 3: Foundation',
+            title: safePoints[2] ? safePoints[2].split(/[:–-]/)[0].trim() : (isMalay ? 'Prinsip Asas' : 'Core Principles'),
+            desc: safePoints[2] || (isMalay ? 'Keperluan asas dan sumber penting.' : 'Foundational requirements and resources.')
+          }
+        }
+      };
+    }
+
+    case 'CIRCULAR_CYCLE': {
+      const stages = safePoints.slice(0, 4).map((pt, stIdx) => {
+        const parts = pt.split(/[:–-]/);
+        return {
+          stage: stIdx + 1,
+          title: parts[0]?.trim() || (isMalay ? `Peringkat 0${stIdx + 1}` : `Stage 0${stIdx + 1}`),
+          desc: parts.length > 1 ? parts.slice(1).join(' ').trim() : pt
+        };
+      });
+      return { archetype: 'CIRCULAR_CYCLE', cycle: { stages } };
+    }
+
+    case 'CASE_STUDY_SHOWCASE': {
+      return {
+        archetype: 'CASE_STUDY_SHOWCASE',
+        caseStudy: {
+          challenge: isMalay ? 'Isu / Cabaran Utama' : 'Core Challenge',
+          challengeDesc: safePoints[0] || (isMalay ? `Cabaran dan situasi sedia ada dalam ${title}.` : `Context and challenges in ${title}.`),
+          solution: isMalay ? 'Langkah / Solusi Praktikal' : 'Practical Solution',
+          solutionDesc: safePoints[1] || (isMalay ? `Kaedah penyelesaian berkesan bagi ${title}.` : `Effective solutions applied for ${title}.`),
+          result: isMalay ? 'Hasil & Impak Kejayaan' : 'Verified Positive Result',
+          resultDesc: safePoints[2] || (isMalay ? `Kefahaman mendalam dan keberhasilan positif.` : `Positive outcome achieved.`),
+          impactMetric: isMalay ? 'Impak Diperakui' : 'Verified Impact'
+        }
+      };
+    }
+
+    case 'BENTO_GRID':
+    default: {
+      return {
+        archetype: 'BENTO_GRID',
+        bento: {
+          spotlightTitle: title,
+          spotlightDesc: safePoints[0],
+          metric1: {
+            label: safePoints[1] ? (safePoints[1].length > 25 ? safePoints[1].slice(0, 25) + '...' : safePoints[1]) : (isMalay ? 'Prinsip Teras' : 'Core Focus'),
+            value: extractRealNumOrText(safePoints[1], isMalay ? 'Teras' : 'Core'),
+            badge: isMalay ? 'Standard' : 'Benchmark'
+          },
+          metric2: {
+            label: safePoints[2] ? (safePoints[2].length > 25 ? safePoints[2].slice(0, 25) + '...' : safePoints[2]) : (isMalay ? 'Keberhasilan' : 'Impact Area'),
+            value: extractRealNumOrText(safePoints[2], isMalay ? 'Utama' : 'Key'),
+            badge: isMalay ? 'Fokus' : 'Focus'
+          },
+          takeaway: safePoints[safePoints.length - 1]
+        }
+      };
+    }
+  }
+}
+
 /**
  * Automatically detects the best matching infographic archetype based on actual content,
  * populating the visual structures strictly with the user's actual points.
@@ -1329,4 +1533,51 @@ export function updateSingleSlideAvatar(slide: SlideData, newAvatar: CharacterSh
   updated.fullFormattedBlock = formatSlideFullBlock(updated);
   return updated;
 }
+
+/**
+ * Updates a single slide's infographic archetype and regenerates prompt representations
+ */
+export function updateSlideInfographicArchetype(
+  slide: SlideData,
+  newArchetype: InfographicArchetype,
+  config: SetupConfig
+): SlideData {
+  const isMalay = config.outputLanguage === 'Bahasa Melayu Baku Malaysia';
+  const newMeta = buildInfographicMetaForArchetype(
+    newArchetype,
+    slide.title,
+    slide.infographicPoints || [],
+    isMalay
+  );
+
+  const prompts = buildOfficialPrompts({
+    slideNumber: slide.slideNumber,
+    title: slide.title,
+    config,
+    pointsOrContent: slide.isMcq
+      ? (slide.mcqDetails?.question || slide.title)
+      : (slide.infographicPoints?.join(' | ') || slide.title),
+    isMcq: slide.isMcq,
+    assignedAvatar: slide.assignedAvatar,
+    infographicType: newArchetype,
+    infographicMeta: newMeta,
+    mcqData: slide.mcqDetails,
+    script30s: slide.scriptAvatar30s,
+    scriptNarration10s: slide.promptVeo10s,
+    scriptConcise5s: slide.promptVeo5s
+  });
+
+  const updated: SlideData = {
+    ...slide,
+    infographicType: newArchetype,
+    infographicMeta: newMeta,
+    promptNanoBanana2: prompts.promptNanoBanana2,
+    promptVeo10s: prompts.promptVeo10s,
+    promptVeo5s: prompts.promptVeo5s,
+  };
+
+  updated.fullFormattedBlock = formatSlideFullBlock(updated);
+  return updated;
+}
+
 

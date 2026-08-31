@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SlideData, SetupConfig, CharacterSheetData } from '../types';
+import { SlideData, SetupConfig, CharacterSheetData, InfographicArchetype } from '../types';
 import { SlideVisualMockup } from './SlideVisualMockup';
 import { generateNanoBanana2Image, downloadImage } from '../utils/imageRenderer';
 import { getPresenterTeachingPoseMalay } from '../utils/slideGenerator';
@@ -23,7 +23,8 @@ import {
   CheckCircle2,
   ExternalLink,
   User,
-  Shuffle
+  Shuffle,
+  Layers
 } from 'lucide-react';
 
 interface SlideCardProps {
@@ -32,6 +33,8 @@ interface SlideCardProps {
   onOpenTeleprompter: (slide: SlideData) => void;
   onUpdateSlideImage?: (slideNumber: number, imageUrl: string, source: string) => void;
   onUpdateSlideAvatar?: (slideNumber: number, avatar: CharacterSheetData) => void;
+  onOpenInfographicSelector?: (slide: SlideData) => void;
+  onUpdateSlideInfographic?: (slideNumber: number, archetype: InfographicArchetype) => void;
 }
 
 export const SlideCard: React.FC<SlideCardProps> = ({
@@ -40,6 +43,8 @@ export const SlideCard: React.FC<SlideCardProps> = ({
   onOpenTeleprompter,
   onUpdateSlideImage,
   onUpdateSlideAvatar,
+  onOpenInfographicSelector,
+  onUpdateSlideInfographic,
 }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showVisualMockup, setShowVisualMockup] = useState(false);
@@ -197,6 +202,20 @@ export const SlideCard: React.FC<SlideCardProps> = ({
               {teachingPose.title}
             </span>
 
+            {/* Infographic Archetype Badge & Switcher for slides 1 to 30 */}
+            {!slide.isMcq && (
+              <button
+                type="button"
+                onClick={() => onOpenInfographicSelector ? onOpenInfographicSelector(slide) : null}
+                className="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/25 flex items-center gap-1.5 transition-all shadow-xs"
+                title="Tukar jenis infografik (4 cadangan dengan live preview)"
+              >
+                <Layers className="w-3 h-3 text-cyan-400" />
+                <span>Gaya: {slide.infographicType?.replace('_', ' ') || 'BENTO GRID'}</span>
+                <span className="text-[10px] text-cyan-400 font-mono underline ml-0.5">Tukar (4 Cadangan)</span>
+              </button>
+            )}
+
             {config.useNametag && (slide.assignedAvatar?.characterName || config.nametagText) && (
               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/30 uppercase">
                 Nametag: {slide.assignedAvatar?.characterName || config.nametagText}
@@ -248,6 +267,19 @@ export const SlideCard: React.FC<SlideCardProps> = ({
                   <span>Jana Imej</span>
                 </>
               )}
+            </button>
+          )}
+
+          {/* Choose Infographic Archetype Button (Slides 1 to 30) */}
+          {!slide.isMcq && onOpenInfographicSelector && (
+            <button
+              type="button"
+              onClick={() => onOpenInfographicSelector(slide)}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 flex items-center gap-1.5 transition-all shadow-xs"
+              title="Pilih daripada 4 Cadangan Infografik dengan Live Preview"
+            >
+              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Gaya Infografik</span>
             </button>
           )}
 
